@@ -1,0 +1,44 @@
+OBJECT Table 50080 Mpesa Config
+{
+  OBJECT-PROPERTIES
+  {
+    Date=;
+    Time=;
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    DataPerCompany=No;
+    Caption=Mpesa Config;
+  }
+  FIELDS
+  {
+    { 1   ;   ;Primary Key         ;Code10        ;Caption=Primary Key }
+    { 2   ;   ;Consumer Key        ;Text100       ;Caption=Consumer Key }
+    { 3   ;   ;Consumer Secret     ;Text100       ;Caption=Consumer Secret }
+    { 4   ;   ;Short Code          ;Code20        ;Caption=Short Code }
+    { 5   ;   ;Passkey             ;Text100       ;Caption=Passkey }
+    { 6   ;   ;Merchant Name       ;Text100       ;Caption=Merchant Name }
+    { 7   ;   ;Transaction Code    ;Option        ;Caption=Transaction Code;
+                                                   OptionCaptionML=ENU=Buy Goods,Paybill,Send Money,Withdraw,Send to Business;
+                                                   OptionString=BG,PB,SM,WA,SB }
+    { 8   ;   ;Environment         ;Option        ;Caption=Environment;
+                                                   OptionCaptionML=ENU=Sandbox,Production;
+                                                   OptionString=Sandbox,Production }
+    { 9   ;   ;Sandbox URL         ;Text250       ;Caption=Sandbox URL }
+    { 10  ;   ;Production URL      ;Text250       ;Caption=Production URL }
+  }
+  KEYS
+  {
+    {    ;Primary Key                                 ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+    BEGIN
+    END.
+  }
+}

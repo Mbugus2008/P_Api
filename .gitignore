@@ -1,0 +1,35 @@
+# Build outputs
+bin/
+obj/
+publish/
+Logs/
+*.log
+publish.tar.gz
+
+# Local packaged app artifacts
+ParcelApp/
+
+# ASP.NET local settings
+appsettings.Development.json
+
+# IDE and user-specific files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.idea/
+
+# NuGet packages and artifacts
+*.nupkg
+packages/
+!**/packages/build/
+!**/packages/repositories.config
+
+# Local tooling
+.altestrunner/
+
+# OS files
+Thumbs.db
+.DS_Store

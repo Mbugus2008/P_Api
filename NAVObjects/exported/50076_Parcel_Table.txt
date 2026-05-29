@@ -1,0 +1,44 @@
+OBJECT Table 50076 Parcel Summary
+{
+  OBJECT-PROPERTIES
+  {
+    Date=01/19/26;
+    Time=[ 8:07:15 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+  }
+  FIELDS
+  {
+    { 1   ;   ;Entry               ;Integer       ;DataClassification=ToBeClassified }
+    { 2   ;   ;Date filter         ;Date          ;FieldClass=FlowFilter }
+    { 3   ;   ;Pending             ;Integer       ;FieldClass=FlowField;
+                                                   CalcFormula=Count(Parcel WHERE (Date Created=FIELD(Date filter),
+                                                                                   Status=FILTER(Open))) }
+    { 4   ;   ;InTransit           ;Integer       ;FieldClass=FlowField;
+                                                   CalcFormula=Count(Parcel WHERE (Date Created=FIELD(Date filter),
+                                                                                   Status=FILTER(In Transist))) }
+    { 5   ;   ;Waiting Collection  ;Integer       ;FieldClass=FlowField;
+                                                   CalcFormula=Count(Parcel WHERE (Date Created=FIELD(Date filter),
+                                                                                   Status=FILTER(Waiting Collection))) }
+    { 6   ;   ;Collected           ;Integer       ;FieldClass=FlowField;
+                                                   CalcFormula=Count(Parcel WHERE (Date Created=FIELD(Date filter),
+                                                                                   Status=FILTER(Collected))) }
+  }
+  KEYS
+  {
+    {    ;Entry                                   ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

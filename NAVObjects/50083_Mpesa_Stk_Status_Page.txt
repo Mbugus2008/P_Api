@@ -1,0 +1,76 @@
+OBJECT Page 50083 Mpesa Stk Status List
+{
+  OBJECT-PROPERTIES
+  {
+    Date=;
+    Time=;
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    Editable=Yes;
+    CaptionML=ENU=Mpesa Stk Status;
+    InsertAllowed=Yes;
+    DeleteAllowed=Yes;
+    ModifyAllowed=Yes;
+    SourceTable=Table50082;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 1   ;0   ;Container ;
+                ContainerType=ContentArea }
+
+    { 2   ;1   ;Group     ;
+                Name=General;
+                GroupType=Repeater }
+
+    { 3   ;2   ;Field     ;
+                SourceExpr="Entry No." }
+
+    { 4   ;2   ;Field     ;
+                SourceExpr="Checkout Request ID" }
+
+    { 5   ;2   ;Field     ;
+                SourceExpr="Merchant Request ID" }
+
+    { 6   ;2   ;Field     ;
+                SourceExpr="Result Code" }
+
+    { 7   ;2   ;Field     ;
+                SourceExpr="Result Description" }
+
+    { 8   ;2   ;Field     ;
+                SourceExpr=Amount }
+
+    { 9   ;2   ;Field     ;
+                SourceExpr="M-Pesa Receipt No." }
+
+    { 10  ;2   ;Field     ;
+                SourceExpr="Phone Number" }
+
+    { 11  ;2   ;Field     ;
+                SourceExpr="Transaction Date" }
+
+    { 12  ;2   ;Field     ;
+                SourceExpr=Reference }
+
+    { 13  ;2   ;Field     ;
+                SourceExpr=Status }
+
+    { 14  ;2   ;Field     ;
+                SourceExpr="Created At" }
+
+    { 15  ;2   ;Field     ;
+                SourceExpr="Processed At" }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

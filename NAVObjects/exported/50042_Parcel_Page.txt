@@ -1,0 +1,104 @@
+OBJECT Page 50042 Parcel
+{
+  OBJECT-PROPERTIES
+  {
+    Date=01/19/26;
+    Time=[ 7:49:01 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    SourceTable=Table50070;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 100000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 100000001;1;Group   ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 100000002;2;Field   ;
+                SourceExpr="Document No" }
+
+    { 100000003;2;Field   ;
+                SourceExpr="Date sent" }
+
+    { 100000004;2;Field   ;
+                SourceExpr="Sender Name" }
+
+    { 100000005;2;Field   ;
+                SourceExpr="Sender ID" }
+
+    { 100000006;2;Field   ;
+                SourceExpr="Sender Phone" }
+
+    { 100000007;2;Field   ;
+                SourceExpr=From }
+
+    { 100000008;2;Field   ;
+                SourceExpr="To" }
+
+    { 100000009;2;Field   ;
+                SourceExpr=Status }
+
+    { 100000010;2;Field   ;
+                SourceExpr="Receiver Name" }
+
+    { 100000011;2;Field   ;
+                SourceExpr="Receiver ID" }
+
+    { 100000012;2;Field   ;
+                SourceExpr="Receiver Phone" }
+
+    { 100000013;2;Field   ;
+                SourceExpr=Driver }
+
+    { 100000014;2;Field   ;
+                SourceExpr=Vehicle }
+
+    { 100000015;2;Field   ;
+                SourceExpr="Date Collected" }
+
+    { 100000016;2;Field   ;
+                SourceExpr="Date Delivered" }
+
+    { 100000017;2;Field   ;
+                SourceExpr="Amount Paid" }
+
+    { 100000018;2;Field   ;
+                SourceExpr=Paid }
+
+    { 100000019;2;Field   ;
+                SourceExpr="Who to Pay" }
+
+    { 100000020;2;Field   ;
+                SourceExpr="Date Created" }
+
+    { 100000021;2;Field   ;
+                SourceExpr="Time Created" }
+
+    { 100000022;2;Field   ;
+                SourceExpr="Time Sent" }
+
+    { 100000023;2;Field   ;
+                SourceExpr="Time Collected" }
+
+    { 100000024;2;Field   ;
+                SourceExpr="Time Delivered" }
+
+    { 100000025;2;Field   ;
+                SourceExpr=Details }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

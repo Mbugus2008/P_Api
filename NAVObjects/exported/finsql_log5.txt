@@ -1,0 +1,1 @@
+[22924070] The RemboClassic database on the nav.trimline.co.ke server cannot be opened by this version of the Microsoft Dynamics NAV Development Environment. The database has already been converted by a newer version.You must upgrade the Microsoft Dynamics NAV Development Environment to the latest version to open the database.

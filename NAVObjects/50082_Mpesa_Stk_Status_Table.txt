@@ -1,0 +1,46 @@
+OBJECT Table 50082 Mpesa Stk Status
+{
+  OBJECT-PROPERTIES
+  {
+    Date=;
+    Time=;
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    DataPerCompany=No;
+    Caption=Mpesa Stk Status;
+  }
+  FIELDS
+  {
+    { 1   ;   ;Entry No.           ;Integer       ;Caption=Entry No.;AutoIncrement=Yes }
+    { 2   ;   ;Checkout Request ID ;Code50        ;Caption=Checkout Request ID }
+    { 3   ;   ;Merchant Request ID ;Code50        ;Caption=Merchant Request ID }
+    { 4   ;   ;Result Code         ;Integer       ;Caption=Result Code }
+    { 5   ;   ;Result Description  ;Text250       ;Caption=Result Description }
+    { 6   ;   ;Amount              ;Decimal       ;Caption=Amount;DecimalPlaces=2: }
+    { 7   ;   ;M-Pesa Receipt No.  ;Code50        ;Caption=M-Pesa Receipt No. }
+    { 8   ;   ;Phone Number        ;Code20        ;Caption=Phone Number }
+    { 9   ;   ;Transaction Date    ;DateTime      ;Caption=Transaction Date }
+    { 10  ;   ;Reference           ;Code50        ;Caption=Reference }
+    { 11  ;   ;Status              ;Option        ;Caption=Status;
+                                                   OptionCaptionML=ENU=Pending,Success,Failed,Cancelled,Timeout;
+                                                   OptionString=Pending,Success,Failed,Cancelled,Timeout }
+    { 12  ;   ;Created At          ;DateTime      ;Caption=Created At }
+    { 13  ;   ;Processed At        ;DateTime      ;Caption=Processed At }
+  }
+  KEYS
+  {
+    {    ;Entry No.                                   ;Clustered=Yes }
+    {    ;Checkout Request ID                         ;Clustered=No }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+    BEGIN
+    END.
+  }
+}

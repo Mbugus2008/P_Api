@@ -1,0 +1,54 @@
+OBJECT Table 50077 Parcel Batch
+{
+  OBJECT-PROPERTIES
+  {
+    Date=05/25/26;
+    Time=[ 5:10:00 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    CaptionML=ENU=Parcel Batch;
+  }
+  FIELDS
+  {
+    { 1   ;   ;Batch No.           ;Code20        ;CaptionML=ENU=Batch No. }
+    { 2   ;   ;Date                ;Date          ;CaptionML=ENU=Date }
+    { 3   ;   ;User                ;Code50        ;CaptionML=ENU=User }
+    { 4   ;   ;Status              ;Option        ;OptionCaptionML=ENU=Pending,Intransit,Received,Collected;
+                                                   OptionString=Pending,Intransit,Received,Collected }
+    { 5   ;   ;User Agent Code     ;Code50        ;CaptionML=ENU=User Agent Code }
+    { 6   ;   ;User Name           ;Text100       ;CaptionML=ENU=User Name }
+    { 7   ;   ;Parcel Document Nos ;Text250       ;CaptionML=ENU=Parcel Document Nos }
+    { 8   ;   ;Parcel Count        ;Integer       ;CaptionML=ENU=Parcel Count }
+    { 9   ;   ;Total Amount        ;Decimal       ;CaptionML=ENU=Total Amount }
+    { 10  ;   ;From Location       ;Code20        ;CaptionML=ENU=From Location }
+    { 11  ;   ;To Location         ;Code20        ;CaptionML=ENU=To Location }
+    { 12  ;   ;Created At          ;DateTime      ;CaptionML=ENU=Created At }
+    { 13  ;   ;Updated At          ;DateTime      ;CaptionML=ENU=Updated At }
+    { 14  ;   ;Is Synced           ;Boolean       ;CaptionML=ENU=Is Synced }
+    { 15  ;   ;Sync Status         ;Text30        ;CaptionML=ENU=Sync Status }
+    { 16  ;   ;Source              ;Code20        ;CaptionML=ENU=Source }
+    { 17  ;   ;Destination         ;Code20        ;CaptionML=ENU=Destination }
+    { 18  ;   ;Vehicle             ;Text100       ;CaptionML=ENU=Vehicle }
+    { 19  ;   ;Driver              ;Text100       ;CaptionML=ENU=Driver }
+    { 20  ;   ;Dispatch Date Time  ;DateTime      ;CaptionML=ENU=Dispatch Date Time }
+    { 21  ;   ;Received Date Time  ;DateTime      ;CaptionML=ENU=Received Date Time }
+  }
+  KEYS
+  {
+    {    ;Batch No.                               ;Clustered=Yes }
+    {    ;Date,Status                              }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

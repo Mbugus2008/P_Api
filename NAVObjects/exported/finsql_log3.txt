@@ -1,0 +1,1 @@
+[29885221] The "ntauthentication" parameter must be specified and have a value of "No" if you want to use the "username" and "password" parameters.

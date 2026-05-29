@@ -1,0 +1,65 @@
+OBJECT Table 50070 Parcel
+{
+  OBJECT-PROPERTIES
+  {
+    Date=05/26/26;
+    Time=12:30:00 PM;
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+  }
+  FIELDS
+  {
+    { 1   ;   ;Document No         ;Code20        ;DataClassification=ToBeClassified }
+    { 2   ;   ;Date sent           ;Date          ;DataClassification=ToBeClassified }
+    { 3   ;   ;Sender Name         ;Text30        ;DataClassification=ToBeClassified }
+    { 4   ;   ;Sender ID           ;Code20        ;DataClassification=ToBeClassified }
+    { 5   ;   ;Sender Phone        ;Code20        ;DataClassification=ToBeClassified }
+    { 6   ;   ;From                ;Code50        ;DataClassification=ToBeClassified }
+    { 7   ;   ;To                  ;Code50        ;DataClassification=ToBeClassified }
+    { 8   ;   ;Status              ;Option        ;DataClassification=ToBeClassified;
+                                                   OptionCaptionML=ENU=Open,In Transist,Waiting Collection,Collected;
+                                                   OptionString=Open,In Transist,Waiting Collection,Collected }
+    { 9   ;   ;Receiver Name       ;Text30        ;DataClassification=ToBeClassified }
+    { 10  ;   ;Receiver ID         ;Code20        ;DataClassification=ToBeClassified }
+    { 11  ;   ;Receiver Phone      ;Code20        ;DataClassification=ToBeClassified }
+    { 12  ;   ;Driver              ;Code20        ;DataClassification=ToBeClassified }
+    { 13  ;   ;Vehicle             ;Code20        ;DataClassification=ToBeClassified }
+    { 14  ;   ;Date Collected      ;Date          ;DataClassification=ToBeClassified }
+    { 15  ;   ;Date Delivered      ;Date          ;DataClassification=ToBeClassified }
+    { 16  ;   ;Amount Paid         ;Decimal       ;DataClassification=ToBeClassified }
+    { 17  ;   ;Paid                ;Boolean       ;DataClassification=ToBeClassified }
+    { 18  ;   ;Who to Pay          ;Option        ;DataClassification=ToBeClassified;
+                                                   OptionCaptionML=ENU=Sender,Receiver;
+                                                   OptionString=Sender,Receiver }
+    { 19  ;   ;Date Created        ;Date          ;DataClassification=ToBeClassified }
+    { 20  ;   ;Time Created        ;Time          ;DataClassification=ToBeClassified }
+    { 21  ;   ;Time Sent           ;Time          ;DataClassification=ToBeClassified }
+    { 22  ;   ;Time Collected      ;Time          ;DataClassification=ToBeClassified }
+    { 23  ;   ;Time Delivered      ;Time          ;DataClassification=ToBeClassified }
+    { 24  ;   ;Created By          ;Code20        ;DataClassification=ToBeClassified }
+    { 25  ;   ;Details             ;Text250       ;DataClassification=ToBeClassified }
+    { 26  ;   ;Payment Method      ;Option        ;DataClassification=ToBeClassified;
+                                                   OptionCaptionML=ENU=Cash,M-Pesa,Pending;
+                                                   OptionString=Cash,MPesa,Pending }
+    { 27  ;   ;Mpesa Code          ;Text50        ;DataClassification=ToBeClassified }
+    { 28  ;   ;Batch No            ;Code20        ;TableRelation="Parcel Batch"."Batch No.";
+                                                   DataClassification=ToBeClassified }
+  }
+  KEYS
+  {
+    {    ;Document No                             ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

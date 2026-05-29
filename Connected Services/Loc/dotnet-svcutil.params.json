@@ -1,0 +1,59 @@
+{
+  "providerId": "Microsoft.Tools.ServiceModel.Svcutil",
+  "version": "8.0.0",
+  "options": {
+    "inputs": [
+      "http://nav.trimline.co.ke:1247/RemboService/WS/REMBO/Page/Locations"
+    ],
+    "namespaceMappings": [
+      "*, Loc"
+    ],
+    "outputFile": "Reference.cs",
+    "references": [
+      "Azure.Core, {Azure.Core, 1.38.0}",
+      "Azure.Identity, {Azure.Identity, 1.11.4}",
+      "Microsoft.AspNetCore.OpenApi, {Microsoft.AspNetCore.OpenApi, 10.0.0-preview.7.25380.108}",
+      "Microsoft.Bcl.AsyncInterfaces, {Microsoft.Bcl.AsyncInterfaces, 5.0.0}",
+      "Microsoft.Bcl.Cryptography, {Microsoft.Bcl.Cryptography, 9.0.4}",
+      "Microsoft.Data.SqlClient, {Microsoft.Data.SqlClient, 6.0.2}",
+      "Microsoft.EntityFrameworkCore, {Microsoft.EntityFrameworkCore, 10.0.0-preview.7.25380.108}",
+      "Microsoft.EntityFrameworkCore.Abstractions, {Microsoft.EntityFrameworkCore.Abstractions, 10.0.0-preview.7.25380.108}",
+      "Microsoft.EntityFrameworkCore.Relational, {Microsoft.EntityFrameworkCore.Relational, 10.0.0-preview.7.25380.108}",
+      "Microsoft.EntityFrameworkCore.SqlServer, {Microsoft.EntityFrameworkCore.SqlServer, 10.0.0-preview.7.25380.108}",
+      "Microsoft.Extensions.DependencyModel, {Microsoft.Extensions.DependencyModel, 10.0.0-preview.7.25380.108}",
+      "Microsoft.Identity.Client, {Microsoft.Identity.Client, 4.61.3}",
+      "Microsoft.Identity.Client.Extensions.Msal, {Microsoft.Identity.Client.Extensions.Msal, 4.61.3}",
+      "Microsoft.IdentityModel.Abstractions, {Microsoft.IdentityModel.Abstractions, 7.5.0}",
+      "Microsoft.IdentityModel.JsonWebTokens, {Microsoft.IdentityModel.JsonWebTokens, 7.5.0}",
+      "Microsoft.IdentityModel.Logging, {Microsoft.IdentityModel.Logging, 7.5.0}",
+      "Microsoft.IdentityModel.Protocols, {Microsoft.IdentityModel.Protocols, 7.5.0}",
+      "Microsoft.IdentityModel.Protocols.OpenIdConnect, {Microsoft.IdentityModel.Protocols.OpenIdConnect, 7.5.0}",
+      "Microsoft.IdentityModel.Protocols.WsTrust, {Microsoft.IdentityModel.Protocols.WsTrust, 6.8.0}",
+      "Microsoft.IdentityModel.Tokens, {Microsoft.IdentityModel.Tokens, 7.5.0}",
+      "Microsoft.IdentityModel.Tokens.Saml, {Microsoft.IdentityModel.Tokens.Saml, 6.8.0}",
+      "Microsoft.IdentityModel.Xml, {Microsoft.IdentityModel.Xml, 6.8.0}",
+      "Microsoft.OpenApi, {Microsoft.OpenApi, 2.3.0}",
+      "Microsoft.SqlServer.Server, {Microsoft.SqlServer.Server, 1.0.0}",
+      "Serilog, {Serilog, 4.0.0}",
+      "Serilog.AspNetCore, {Serilog.AspNetCore, 8.0.3}",
+      "Serilog.Extensions.Hosting, {Serilog.Extensions.Hosting, 8.0.0}",
+      "Serilog.Extensions.Logging, {Serilog.Extensions.Logging, 8.0.0}",
+      "Serilog.Formatting.Compact, {Serilog.Formatting.Compact, 2.0.0}",
+      "Serilog.Settings.Configuration, {Serilog.Settings.Configuration, 8.0.4}",
+      "Serilog.Sinks.Console, {Serilog.Sinks.Console, 6.0.0}",
+      "Serilog.Sinks.Debug, {Serilog.Sinks.Debug, 2.0.0}",
+      "Serilog.Sinks.File, {Serilog.Sinks.File, 6.0.0}",
+      "Swashbuckle.AspNetCore.Swagger, {Swashbuckle.AspNetCore.Swagger, 10.0.1}",
+      "Swashbuckle.AspNetCore.SwaggerGen, {Swashbuckle.AspNetCore.SwaggerGen, 10.0.1}",
+      "Swashbuckle.AspNetCore.SwaggerUI, {Swashbuckle.AspNetCore.SwaggerUI, 10.0.1}",
+      "System.ClientModel, {System.ClientModel, 1.0.0}",
+      "System.IdentityModel.Tokens.Jwt, {System.IdentityModel.Tokens.Jwt, 7.5.0}",
+      "System.Memory.Data, {System.Memory.Data, 1.0.2}",
+      "System.Security.Cryptography.Pkcs, {System.Security.Cryptography.Pkcs, 9.0.4}",
+      "System.Security.Cryptography.ProtectedData, {System.Security.Cryptography.ProtectedData, 9.0.4}"
+    ],
+    "sync": true,
+    "targetFramework": "net10.0",
+    "typeReuseMode": "All"
+  }
+}

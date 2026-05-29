@@ -1,0 +1,3 @@
+[22922070] The following SQL Server error or errors occurred:-2146893042,"HY000",[Microsoft][SQL Server Native Client 11.0]SQL Server Network Interfaces: No credentials are available in the security package
+
+-2146893042,"HY000",[Microsoft][SQL Server Native Client 11.0]Cannot generate SSPI context

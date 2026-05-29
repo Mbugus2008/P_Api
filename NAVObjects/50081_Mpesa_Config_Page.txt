@@ -1,0 +1,49 @@
+OBJECT Page 50081 Mpesa Config
+{
+  OBJECT-PROPERTIES
+  {
+    Date=;
+    Time=;
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    Caption=Mpesa Config;
+    SourceTable=Table50080;
+    PageType=Card;
+  }
+  CONTROLS
+  {
+    { 1   ;0   ;Container ;
+                ContainerType=ContentArea }
+    { 2   ;1   ;Group     ;
+                Name=General;
+                GroupType=Group }
+    { 3   ;2   ;Field     ;
+                SourceExpr="Primary Key" }
+    { 4   ;2   ;Field     ;
+                SourceExpr="Consumer Key" }
+    { 5   ;2   ;Field     ;
+                SourceExpr="Consumer Secret" }
+    { 6   ;2   ;Field     ;
+                SourceExpr="Short Code" }
+    { 7   ;2   ;Field     ;
+                SourceExpr=Passkey }
+    { 8   ;2   ;Field     ;
+                SourceExpr="Merchant Name" }
+    { 9   ;2   ;Field     ;
+                SourceExpr="Transaction Code" }
+    { 10  ;2   ;Field     ;
+                SourceExpr=Environment }
+    { 11  ;2   ;Field     ;
+                SourceExpr="Sandbox URL" }
+    { 12  ;2   ;Field     ;
+                SourceExpr="Production URL" }
+  }
+  CODE
+  {
+    BEGIN
+    END.
+  }
+}

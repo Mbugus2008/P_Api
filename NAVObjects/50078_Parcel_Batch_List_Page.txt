@@ -1,0 +1,100 @@
+OBJECT Page 50078 Parcel Batch List
+{
+  OBJECT-PROPERTIES
+  {
+    Date=05/25/26;
+    Time=[ 5:10:00 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    Editable=Yes;
+    CaptionML=ENU=Parcel Batches;
+    InsertAllowed=Yes;
+    DeleteAllowed=Yes;
+    ModifyAllowed=Yes;
+    SourceTable=Table50077;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 1   ;0   ;Container ;
+                ContainerType=ContentArea }
+
+    { 2   ;1   ;Group     ;
+                Name=General;
+                GroupType=Repeater }
+
+    { 3   ;2   ;Field     ;
+                SourceExpr="Batch No." }
+
+    { 4   ;2   ;Field     ;
+                SourceExpr=Date }
+
+    { 5   ;2   ;Field     ;
+                SourceExpr=User }
+
+    { 6   ;2   ;Field     ;
+                SourceExpr=Status }
+
+    { 7   ;2   ;Field     ;
+                SourceExpr="User Agent Code" }
+
+    { 8   ;2   ;Field     ;
+                SourceExpr="User Name" }
+
+    { 9   ;2   ;Field     ;
+                SourceExpr="Parcel Count" }
+
+    { 10  ;2   ;Field     ;
+                SourceExpr="Total Amount" }
+
+    { 11  ;2   ;Field     ;
+                SourceExpr="From Location" }
+
+    { 12  ;2   ;Field     ;
+                SourceExpr="To Location" }
+
+    { 13  ;2   ;Field     ;
+                SourceExpr="Is Synced" }
+
+    { 14  ;2   ;Field     ;
+                SourceExpr="Sync Status" }
+
+    { 15  ;2   ;Field     ;
+                SourceExpr="Created At" }
+
+    { 16  ;2   ;Field     ;
+                SourceExpr="Updated At" }
+
+    { 17  ;2   ;Field     ;
+                SourceExpr="Parcel Document Nos" }
+
+    { 18  ;2   ;Field     ;
+                SourceExpr=Source }
+
+    { 19  ;2   ;Field     ;
+                SourceExpr=Destination }
+
+    { 20  ;2   ;Field     ;
+                SourceExpr=Vehicle }
+
+    { 21  ;2   ;Field     ;
+                SourceExpr=Driver }
+
+    { 22  ;2   ;Field     ;
+                SourceExpr="Dispatch Date Time" }
+
+    { 23  ;2   ;Field     ;
+                SourceExpr="Received Date Time" }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

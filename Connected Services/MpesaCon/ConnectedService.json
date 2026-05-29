@@ -1,0 +1,17 @@
+{
+  "ExtendedData": {
+    "inputs": [
+      "http://nav.trimline.co.ke:1247/RemboService/WS/REMBO/Page/MpesaConfig"
+    ],
+    "collectionTypes": [
+      "System.Array",
+      "System.Collections.Generic.Dictionary`2"
+    ],
+    "namespaceMappings": [
+      "*, MpesaCon"
+    ],
+    "sync": true,
+    "targetFramework": "net10.0",
+    "typeReuseMode": "All"
+  }
+}

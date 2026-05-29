@@ -1,0 +1,106 @@
+@baseUrl = https://localhost:62748
+@clientId = CLIENT001
+@batchNo = BATCH-0001
+@batchKey = REPLACE_WITH_BATCH_KEY
+
+### Health check (optional)
+GET {{baseUrl}}/swagger/index.html
+
+### List batches (client route)
+POST {{baseUrl}}/api/Parcel/Batches
+X-Client-Identifier: {{clientId}}
+Content-Type: application/json
+
+{
+  "batchNo": "",
+  "dateFrom": "2026-05-01",
+  "dateTo": "2026-05-31",
+  "user": "",
+  "status": "Pending",
+  "userAgentCode": "",
+  "fromLocation": "",
+  "toLocation": "",
+  "isSynced": false,
+  "pageSize": 100
+}
+
+### List batches (nav route)
+POST {{baseUrl}}/api/Parcel/nav/batches
+X-Client-Identifier: {{clientId}}
+Content-Type: application/json
+
+{
+  "batchNo": "",
+  "dateFrom": "2026-05-01",
+  "dateTo": "2026-05-31",
+  "status": "Intransit",
+  "fromLocation": "NAIROBI",
+  "toLocation": "MOMBASA",
+  "pageSize": 50
+}
+
+### Get one batch by Batch No
+GET {{baseUrl}}/api/Parcel/nav/batches/{{batchNo}}
+X-Client-Identifier: {{clientId}}
+
+### Create batch
+POST {{baseUrl}}/api/Parcel/nav/batches/create
+X-Client-Identifier: {{clientId}}
+Content-Type: application/json
+
+{
+  "batch_No": "{{batchNo}}",
+  "date": "2026-05-25",
+  "dateSpecified": true,
+  "user": "system",
+  "status": "Pending",
+  "statusSpecified": true,
+  "user_Agent_Code": "AG001",
+  "user_Name": "Test User",
+  "parcel_Count": 2,
+  "parcel_CountSpecified": true,
+  "total_Amount": 3500,
+  "total_AmountSpecified": true,
+  "from_Location": "NAIROBI",
+  "to_Location": "MOMBASA",
+  "is_Synced": false,
+  "is_SyncedSpecified": true,
+  "sync_Status": "NotSynced",
+  "created_At": "2026-05-25T10:00:00",
+  "created_AtSpecified": true,
+  "updated_At": "2026-05-25T10:00:00",
+  "updated_AtSpecified": true,
+  "parcel_Document_Nos": "DOC001,DOC002"
+}
+
+### Update batch (Key is fetched internally using Batch_No)
+PUT {{baseUrl}}/api/Parcel/nav/batches/update
+X-Client-Identifier: {{clientId}}
+Content-Type: application/json
+
+{
+  "batch_No": "{{batchNo}}",
+  "date": "2026-05-25",
+  "dateSpecified": true,
+  "user": "system",
+  "status": "Received",
+  "statusSpecified": true,
+  "user_Agent_Code": "AG001",
+  "user_Name": "Test User",
+  "parcel_Count": 2,
+  "parcel_CountSpecified": true,
+  "total_Amount": 3500,
+  "total_AmountSpecified": true,
+  "from_Location": "NAIROBI",
+  "to_Location": "MOMBASA",
+  "is_Synced": true,
+  "is_SyncedSpecified": true,
+  "sync_Status": "Synced",
+  "updated_At": "2026-05-25T12:00:00",
+  "updated_AtSpecified": true,
+  "parcel_Document_Nos": "DOC001,DOC002"
+}
+
+### Delete batch by NAV Key
+DELETE {{baseUrl}}/api/Parcel/nav/batches/{{batchKey}}
+X-Client-Identifier: {{clientId}}

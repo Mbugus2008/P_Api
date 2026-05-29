@@ -1,0 +1,559 @@
+OBJECT Page 50042 Parcel
+{
+  OBJECT-PROPERTIES
+  {
+    Date=01/19/26;
+    Time=[ 7:49:01 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    SourceTable=Table50070;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 100000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 100000001;1;Group   ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 100000002;2;Field   ;
+                SourceExpr="Document No" }
+
+    { 100000003;2;Field   ;
+                SourceExpr="Date sent" }
+
+    { 100000004;2;Field   ;
+                SourceExpr="Sender Name" }
+
+    { 100000005;2;Field   ;
+                SourceExpr="Sender ID" }
+
+    { 100000006;2;Field   ;
+                SourceExpr="Sender Phone" }
+
+    { 100000007;2;Field   ;
+                SourceExpr=From }
+
+    { 100000008;2;Field   ;
+                SourceExpr="To" }
+
+    { 100000009;2;Field   ;
+                SourceExpr=Status }
+
+    { 100000010;2;Field   ;
+                SourceExpr="Receiver Name" }
+
+    { 100000011;2;Field   ;
+                SourceExpr="Receiver ID" }
+
+    { 100000012;2;Field   ;
+                SourceExpr="Receiver Phone" }
+
+    { 100000013;2;Field   ;
+                SourceExpr=Driver }
+
+    { 100000014;2;Field   ;
+                SourceExpr=Vehicle }
+
+    { 100000015;2;Field   ;
+                SourceExpr="Date Collected" }
+
+    { 100000016;2;Field   ;
+                SourceExpr="Date Delivered" }
+
+    { 100000017;2;Field   ;
+                SourceExpr="Amount Paid" }
+
+    { 100000018;2;Field   ;
+                SourceExpr=Paid }
+
+    { 100000019;2;Field   ;
+                SourceExpr="Who to Pay" }
+
+    { 100000020;2;Field   ;
+                SourceExpr="Date Created" }
+
+    { 100000021;2;Field   ;
+                SourceExpr="Time Created" }
+
+    { 100000022;2;Field   ;
+                SourceExpr="Time Sent" }
+
+    { 100000023;2;Field   ;
+                SourceExpr="Time Collected" }
+
+    { 100000024;2;Field   ;
+                SourceExpr="Time Delivered" }
+
+    { 100000025;2;Field   ;
+                SourceExpr=Details }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+
+OBJECT Page 50049 Parcel Details
+{
+  OBJECT-PROPERTIES
+  {
+    Date=09/30/25;
+    Time=[ 8:23:15 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    SourceTable=Table50071;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 100000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 100000001;1;Group   ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 100000002;2;Field   ;
+                SourceExpr="Document No" }
+
+    { 100000003;2;Field   ;
+                SourceExpr="No Of Items" }
+
+    { 100000004;2;Field   ;
+                SourceExpr=Description }
+
+    { 100000005;2;Field   ;
+                SourceExpr=Amount }
+
+    { 100000006;2;Field   ;
+                SourceExpr=Remarks }
+
+    { 100000007;2;Field   ;
+                SourceExpr=Weight }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+
+OBJECT Page 50066 Parcel charges setup
+{
+  OBJECT-PROPERTIES
+  {
+    Date=09/30/25;
+    Time=[ 6:56:18 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    SourceTable=Table50072;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 100000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 100000001;1;Group   ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 100000002;2;Field   ;
+                SourceExpr="Location From" }
+
+    { 100000003;2;Field   ;
+                SourceExpr="Location To" }
+
+    { 100000004;2;Field   ;
+                SourceExpr="Weight From" }
+
+    { 100000005;2;Field   ;
+                SourceExpr="Weight To" }
+
+    { 100000006;2;Field   ;
+                SourceExpr=Subsequent }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+
+OBJECT Page 50072 Parcel Users
+{
+  OBJECT-PROPERTIES
+  {
+    Date=12/07/25;
+    Time=[ 6:49:20 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    SourceTable=Table50074;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 100000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 100000001;1;Group   ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 100000002;2;Field   ;
+                SourceExpr="Agent Code" }
+
+    { 100000003;2;Field   ;
+                SourceExpr="Date Entered" }
+
+    { 100000004;2;Field   ;
+                SourceExpr="Time Entered" }
+
+    { 100000005;2;Field   ;
+                SourceExpr="Entered By" }
+
+    { 100000006;2;Field   ;
+                SourceExpr=Name }
+
+    { 100000007;2;Field   ;
+                SourceExpr="Mobile No" }
+
+    { 100000008;2;Field   ;
+                SourceExpr=Status }
+
+    { 100000009;2;Field   ;
+                SourceExpr=Comments }
+
+    { 100000010;2;Field   ;
+                SourceExpr="Rejection Reason" }
+
+    { 100000011;2;Field   ;
+                SourceExpr="Date Approved" }
+
+    { 100000012;2;Field   ;
+                SourceExpr="Time Approved" }
+
+    { 100000013;2;Field   ;
+                SourceExpr="Approved By" }
+
+    { 100000014;2;Field   ;
+                SourceExpr="Date Rejected" }
+
+    { 100000015;2;Field   ;
+                SourceExpr="Time Rejected" }
+
+    { 100000016;2;Field   ;
+                SourceExpr="Rejected By" }
+
+    { 100000017;2;Field   ;
+                SourceExpr="Sent To Server" }
+
+    { 100000018;2;Field   ;
+                SourceExpr="No. Series" }
+
+    { 100000019;2;Field   ;
+                SourceExpr="1st Approval By" }
+
+    { 100000020;2;Field   ;
+                SourceExpr="Date 1st Approval" }
+
+    { 100000021;2;Field   ;
+                SourceExpr="Time First Approval" }
+
+    { 100000022;2;Field   ;
+                SourceExpr=Account }
+
+    { 100000023;2;Field   ;
+                SourceExpr="Name of the Proposed Agent" }
+
+    { 100000024;2;Field   ;
+                SourceExpr="Date of Birth" }
+
+    { 100000025;2;Field   ;
+                SourceExpr="Type of Business" }
+
+    { 100000026;2;Field   ;
+                SourceExpr="Place of birth" }
+
+    { 100000027;2;Field   ;
+                SourceExpr="Business/Work Experience" }
+
+    { 100000028;2;Field   ;
+                SourceExpr=Location }
+
+    { 100000029;2;Field   ;
+                SourceExpr="PIN(KRA)" }
+
+    { 100000030;2;Field   ;
+                SourceExpr=Password }
+
+    { 100000031;2;Field   ;
+                SourceExpr="Account type" }
+
+    { 100000032;2;Field   ;
+                SourceExpr=Amount }
+
+    { 100000033;2;Field   ;
+                SourceExpr="Date filter" }
+
+    { 100000034;2;Field   ;
+                SourceExpr="Type filter" }
+
+    { 100000035;2;Field   ;
+                SourceExpr="Account Balance" }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+
+OBJECT Page 50073 Parcel Logs
+{
+  OBJECT-PROPERTIES
+  {
+    Date=12/08/25;
+    Time=12:29:33 AM;
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    SourceTable=Table50075;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 100000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 100000001;1;Group   ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 100000002;2;Field   ;
+                SourceExpr="Document No" }
+
+    { 100000003;2;Field   ;
+                SourceExpr=User }
+
+    { 100000004;2;Field   ;
+                SourceExpr=Action }
+
+    { 100000005;2;Field   ;
+                SourceExpr=Description }
+
+    { 100000006;2;Field   ;
+                SourceExpr=Date }
+
+    { 100000007;2;Field   ;
+                SourceExpr=Time }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+
+OBJECT Page 50076 Parcel Activities
+{
+  OBJECT-PROPERTIES
+  {
+    Date=01/19/26;
+    Time=[ 8:15:33 PM];
+    Modified=Yes;
+    Version List=NAVW114.00;
+  }
+  PROPERTIES
+  {
+    CaptionML=[ENU=Parcel;
+               DEA=Aktivit„ten];
+    SourceTable=Table50076;
+    PageType=CardPart;
+    RefreshOnActivate=Yes;
+    OnOpenPage=BEGIN
+                 SETFILTER("Date filter", '%1',TODAY);
+               END;
+
+    ActionList=ACTIONS
+    {
+      { 1000000008;  ;ActionContainer;
+                      ActionContainerType=ActionItems }
+    }
+  }
+  CONTROLS
+  {
+    { 1900000001;0;Container;
+                ContainerType=ContentArea }
+
+    { 100000003;1;Group   ;
+                CaptionML=ENU=Parcel;
+                GroupType=CueGroup }
+
+    { 100000004;2;Field   ;
+                SourceExpr=Pending;
+                Style=Attention;
+                StyleExpr=TRUE }
+
+    { 100000013;2;Field   ;
+                SourceExpr=InTransit;
+                Style=Attention;
+                StyleExpr=TRUE }
+
+    { 100000012;2;Field   ;
+                SourceExpr="Waiting Collection";
+                Style=Attention;
+                StyleExpr=TRUE }
+
+    { 100000000;2;Field   ;
+                SourceExpr=Collected;
+                Style=Favorable;
+                StyleExpr=TRUE }
+
+  }
+  CODE
+  {
+    VAR
+      UserTaskManagement@1910 : Codeunit 1174;
+      ViewMembers@1000000000 : Boolean;
+      ViewCrew@1000000001 : Boolean;
+      ViewVehicles@1000000002 : Boolean;
+      ViewRoute@1000000003 : Boolean;
+      UserSetup@1000000004 : Record 91;
+      UserSetupExt@1000000005 : Record 50051;
+      StyleText@100000000 : Text;
+      Space@100000001 : Text;
+
+    BEGIN
+    END.
+  }
+}
+
+OBJECT Page 50078 Parcel Batch List
+{
+  OBJECT-PROPERTIES
+  {
+    Date=05/25/26;
+    Time=[ 5:10:00 PM];
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    Editable=Yes;
+    CaptionML=ENU=Parcel Batches;
+    InsertAllowed=Yes;
+    DeleteAllowed=Yes;
+    ModifyAllowed=Yes;
+    SourceTable=Table50077;
+    PageType=List;
+  }
+  CONTROLS
+  {
+    { 1   ;0   ;Container ;
+                ContainerType=ContentArea }
+
+    { 2   ;1   ;Group     ;
+                Name=General;
+                GroupType=Repeater }
+
+    { 3   ;2   ;Field     ;
+                SourceExpr="Batch No." }
+
+    { 4   ;2   ;Field     ;
+                SourceExpr=Date }
+
+    { 5   ;2   ;Field     ;
+                SourceExpr=User }
+
+    { 6   ;2   ;Field     ;
+                SourceExpr=Status }
+
+    { 7   ;2   ;Field     ;
+                SourceExpr="User Agent Code" }
+
+    { 8   ;2   ;Field     ;
+                SourceExpr="User Name" }
+
+    { 9   ;2   ;Field     ;
+                SourceExpr="Parcel Count" }
+
+    { 10  ;2   ;Field     ;
+                SourceExpr="Total Amount" }
+
+    { 11  ;2   ;Field     ;
+                SourceExpr="From Location" }
+
+    { 12  ;2   ;Field     ;
+                SourceExpr="To Location" }
+
+    { 13  ;2   ;Field     ;
+                SourceExpr="Is Synced" }
+
+    { 14  ;2   ;Field     ;
+                SourceExpr="Sync Status" }
+
+    { 15  ;2   ;Field     ;
+                SourceExpr="Created At" }
+
+    { 16  ;2   ;Field     ;
+                SourceExpr="Updated At" }
+
+    { 17  ;2   ;Field     ;
+                SourceExpr="Parcel Document Nos" }
+
+    { 18  ;2   ;Field     ;
+                SourceExpr=Source }
+
+    { 19  ;2   ;Field     ;
+                SourceExpr=Destination }
+
+    { 20  ;2   ;Field     ;
+                SourceExpr=Vehicle }
+
+    { 21  ;2   ;Field     ;
+                SourceExpr=Driver }
+
+    { 22  ;2   ;Field     ;
+                SourceExpr="Dispatch Date Time" }
+
+    { 23  ;2   ;Field     ;
+                SourceExpr="Received Date Time" }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+
