@@ -179,9 +179,120 @@ namespace ParcelAPI.Services
 
         public async Task<MpesaStkStatus?> GetStatusAsync(string checkoutRequestId)
         {
-            return await _dbContext.MpesaStkStatuses
-                .AsNoTracking()
+            var existing = await _dbContext.MpesaStkStatuses
                 .FirstOrDefaultAsync(s => s.CheckoutRequestId == checkoutRequestId);
+
+            if (existing == null)
+                return null;
+
+            // If the callback has already resolved this transaction, return as-is.
+            if (existing.Status != "Pending")
+                return existing;
+
+            // The Safaricom callback may never reach us (firewall / port not
+            // publicly reachable). Give it a short head start, then actively
+            // query Safaricom's STK Push Query API as a fallback so the payment
+            // still gets picked up.
+            if ((DateTime.UtcNow - existing.CreatedAt) < TimeSpan.FromSeconds(8))
+                return existing;
+
+            try
+            {
+                await QueryAndUpdateFromSafaricomAsync(existing);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "STK push query fallback failed for {Checkout}", checkoutRequestId);
+            }
+
+            return existing;
+        }
+
+        private async Task QueryAndUpdateFromSafaricomAsync(MpesaStkStatus existing)
+        {
+            using var navConfigService = new NavMpesaConfigService(_clientInfo, _logger);
+            var navConfig = await navConfigService.ReadConfigAsync();
+
+            if (navConfig == null ||
+                string.IsNullOrWhiteSpace(navConfig.Consumer_Key) ||
+                string.IsNullOrWhiteSpace(navConfig.Consumer_Secret))
+            {
+                return;
+            }
+
+            var token = await GetAccessTokenAsync(navConfig);
+            var baseUrl = NormalizeBaseUrl(navConfig.Environment == MpesaCon.Environment.Production
+                ? navConfig.Production_URL
+                : navConfig.Sandbox_URL);
+
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                baseUrl = navConfig.Environment == MpesaCon.Environment.Production
+                    ? "https://api.safaricom.co.ke"
+                    : "https://sandbox.safaricom.co.ke";
+
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var rawPassword = $"{navConfig.Short_Code}{navConfig.Passkey}{timestamp}";
+            var password = Convert.ToBase64String(Encoding.UTF8.GetBytes(rawPassword));
+
+            var payload = new
+            {
+                BusinessShortCode = navConfig.Short_Code,
+                Password = password,
+                Timestamp = timestamp,
+                CheckoutRequestID = existing.CheckoutRequestId
+            };
+
+            var content = new StringContent(
+                JsonSerializer.Serialize(payload),
+                Encoding.UTF8,
+                "application/json");
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.PostAsync($"{baseUrl}/mpesa/stkpushquery/v1/query", content);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            _logger.LogInformation("STK query response for {Checkout}: {Status} - {Body}",
+                existing.CheckoutRequestId, response.StatusCode, responseBody);
+
+            using var doc = JsonDocument.Parse(responseBody);
+            var root = doc.RootElement;
+
+            // While the customer hasn't acted yet, Safaricom returns an error
+            // envelope (e.g. errorCode 500.001.1001 "transaction is being
+            // processed"). In that case there is no ResultCode to act on.
+            if (!root.TryGetProperty("ResultCode", out var resultCodeProp))
+                return;
+
+            var resultCodeStr = resultCodeProp.ValueKind == JsonValueKind.String
+                ? resultCodeProp.GetString()
+                : resultCodeProp.GetRawText();
+
+            if (!int.TryParse(resultCodeStr, out var resultCode))
+                return;
+
+            // Still pending on Safaricom's side - leave the record untouched.
+            if (resultCode == -1)
+                return;
+
+            var resultDesc = root.TryGetProperty("ResultDesc", out var descProp)
+                ? descProp.GetString()
+                : null;
+
+            existing.ResultCode = resultCode;
+            existing.ResultDescription = resultDesc ?? existing.ResultDescription;
+            existing.ProcessedAt = DateTime.UtcNow;
+            existing.Status = resultCode switch
+            {
+                0 => "Success",
+                1032 => "Cancelled",
+                1037 => "Timeout",
+                _ => "Failed"
+            };
+
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("STK status updated via query fallback: {Checkout} = {Status}",
+                existing.CheckoutRequestId, existing.Status);
         }
 
         private static DateTime? ParseSafaricomDate(long value)

@@ -614,6 +614,10 @@ namespace ParcelAPI.Controllers
             parcel.PaidSpecified = true;
             parcel.Date_CollectedSpecified = HasDateValue(parcel.Date_Collected);
             parcel.Date_DeliveredSpecified = HasDateValue(parcel.Date_Delivered);
+            parcel.Time_CreatedSpecified = HasDateValue(parcel.Time_Created);
+            parcel.Time_SentSpecified = HasDateValue(parcel.Time_Sent);
+            parcel.Time_CollectedSpecified = HasDateValue(parcel.Time_Collected);
+            parcel.Time_DeliveredSpecified = HasDateValue(parcel.Time_Delivered);
             parcel.Payment_MethodSpecified = true;
         }
 

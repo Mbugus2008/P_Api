@@ -54,7 +54,7 @@ if (-not (Test-Path $LocalPublishPath)) {
 }
 
 $publishRoot = (Resolve-Path $LocalPublishPath).Path
-$publishRootUri = New-Object System.Uri(($publishRoot.TrimEnd('\\') + '\\'))
+$publishRootUri = New-Object System.Uri(($publishRoot.TrimEnd('\') + '\'))
 
 Write-Host "Reading previous remote manifest (if present)..."
 $remoteManifestRaw = Invoke-RemotePowerShell -ScriptText @"
@@ -79,7 +79,7 @@ $localEntries = New-Object System.Collections.Generic.List[object]
 
 foreach ($file in $localFiles) {
     $fileUri = New-Object System.Uri($file.FullName)
-    $relative = [System.Uri]::UnescapeDataString($publishRootUri.MakeRelativeUri($fileUri).ToString()).Replace('\\', '/')
+    $relative = [System.Uri]::UnescapeDataString($publishRootUri.MakeRelativeUri($fileUri).ToString()).Replace('\', '/')
     $hash = (Get-FileHash -Path $file.FullName -Algorithm SHA256).Hash
     $localEntries.Add([PSCustomObject]@{
         path = $relative
@@ -111,7 +111,7 @@ try {
     New-Item -Path $tempRoot -ItemType Directory -Force | Out-Null
 
     foreach ($entry in $changed) {
-        $relativeWindows = $entry.path.Replace('/', '\\')
+        $relativeWindows = $entry.path.Replace('/', [IO.Path]::DirectorySeparatorChar)
         $targetFile = Join-Path $tempRoot $relativeWindows
         $targetDir = Split-Path -Path $targetFile -Parent
         if (-not (Test-Path $targetDir)) {

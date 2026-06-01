@@ -65,8 +65,12 @@ namespace ParcelAPI.Services
                 Size = request.Size ?? "300"
             };
 
+            var payloadJson = JsonSerializer.Serialize(payload);
+            _logger.LogInformation("Safaricom QR request to {Url}: {Payload}",
+                $"{baseUrl}/mpesa/qrcode/v1/generate", payloadJson);
+
             var content = new StringContent(
-                JsonSerializer.Serialize(payload),
+                payloadJson,
                 Encoding.UTF8,
                 "application/json");
 
@@ -85,6 +89,10 @@ namespace ParcelAPI.Services
             {
                 PropertyNameCaseInsensitive = true
             });
+
+            _logger.LogInformation(
+                "Safaricom QR response: ResponseCode={Code}, ResponseDescription={Desc}, QRCodeLength={Len}",
+                result?.ResponseCode, result?.ResponseDescription, result?.QrCodeBase64?.Length ?? 0);
 
             return result ?? throw new InvalidOperationException("Failed to parse QR API response");
         }
