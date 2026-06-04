@@ -1,0 +1,63 @@
+name: Deploy ParcelAPI
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:       # allow manual trigger
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: 'ParcelAPI.csproj'
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest   # Windows needed for msdeploy
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore
+
+      - name: Publish
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} `
+            -c Release `
+            -o ./publish `
+            --no-build
+
+      - name: Deploy via Web Deploy
+        run: |
+          # Install Web Deploy on the runner (if not present)
+          # This step assumes the GitHub runner has msdeploy or you use a self-hosted runner
+
+          msdeploy.exe `
+            -verb:sync `
+            -source:contentPath='./publish' `
+            -dest:contentPath='${{ secrets.IIS_SITE_NAME }}', `
+                  computerName='https://${{ secrets.REMOTE_HOST }}:${{ secrets.MSDEPLOY_PORT }}/msdeploy.axd?site=${{ secrets.IIS_SITE_NAME }}', `
+                  userName='${{ secrets.DEPLOY_USER }}', `
+                  password='${{ secrets.DEPLOY_PASSWORD }}', `
+                  authType=Basic,includeAcls=False `
+            -enableRule:AppOffline `
+            -enableRule:DoNotDeleteRule `
+            -retryAttempts:3 `
+            -retryInterval:5000 `
+            -allowUntrusted
+        shell: powershell
+        env:
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          MSDEPLOY_PORT: ${{ secrets.MSDEPLOY_PORT || '8172' }}
+          IIS_SITE_NAME: ${{ secrets.IIS_SITE_NAME || 'Parcel' }}

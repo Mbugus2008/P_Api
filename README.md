@@ -59,59 +59,169 @@ The API will be available at:
 - HTTPS: https://localhost:5001
 - Swagger UI: https://localhost:5001/swagger
 
-### Incremental Deploy (Changed Files Only)
+## 🚀 Production Pipeline — Rapid, Seamless Updates
 
-Use the incremental deploy script to upload only files that changed since the last deployment:
+### Overview
+
+```
+Git Push → GitHub Actions → Build → Web Deploy (app_offline) → Health Check → Done!
+                     ↓
+              DB Migrations (before code)
+```
+
+### Zero-Downtime Strategy
+
+This pipeline uses **Web Deploy with `app_offline.htm`** — the gold standard for IIS deployments:
+
+1. `app_offline.htm` is placed in the app root → IIS immediately serves it (no more app processing)
+2. **In-flight requests complete gracefully** (no abrupt kill)
+3. All new files are synced
+4. `app_offline.htm` is removed → IIS restarts the app pool with new code
+5. New requests hit the updated API
+
+**Typical downtime:** 3–10 seconds (the time to sync files).
+
+### CI/CD Pipeline (Recommended)
+
+A GitHub Actions workflow is included at `.github/workflows/deploy.yml`. On every push to `main`:
+
+| Stage | Description |
+|---|---|
+| 1. Build | `dotnet restore` → `dotnet build -c Release` |
+| 2. Publish | `dotnet publish -c Release -o ./publish` |
+| 3. Deploy | `msdeploy` with `-enableRule:AppOffline` to target IIS |
+| 4. Verify | (Optional) health check confirms API is serving |
+
+**To use GitHub Actions:**
+1. Push the `.github/workflows/deploy.yml` to your repo
+2. Add these **repository secrets** (`Settings → Secrets and variables → Actions`):
+   - `REMOTE_HOST` — e.g., `nav.trimline.co.ke`
+   - `DEPLOY_USER` — e.g., `Administrator`
+   - `DEPLOY_PASSWORD` — Web Deploy password
+   - `MSDEPLOY_PORT` — (optional, default `8172`)
+   - `IIS_SITE_NAME` — (optional, default `Parcel`)
+
+### Local Deploy Commands
+
+#### Fastest: Web Deploy (msdeploy) — with app_offline
+
+```powershell
+# Build + deploy in one command
+pwsh ./deploy_webdeploy.ps1
+
+# With DB migrations (run BEFORE code deploy for zero-downtime)
+pwsh ./deploy_webdeploy.ps1 -RunMigrations -ConnectionString "Server=...;Database=ParcelDB;..."
+
+# Deploy only (skip publish, reuse ./publish folder)
+pwsh ./deploy_webdeploy.ps1 -SkipPublish
+
+# Non-interactive (for CI)
+pwsh ./deploy_webdeploy.ps1 -Password "yourpassword"
+
+# Preview command without running
+pwsh ./deploy_webdeploy.ps1 -DryRun
+```
+
+**Options:**
+| Parameter | Default | Description |
+|---|---|---|
+| `-RemoteHost` | `nav.trimline.co.ke` | Target server |
+| `-RemotePort` | `8172` | Web Deploy port |
+| `-SiteName` | `Parcel` | IIS site name |
+| `-UserName` | `Administrator` | Server admin |
+| `-Password` | *(prompt)* | Pass non-interactively for CI |
+| `-SkipPublish` | off | Skip `dotnet publish`, use existing `./publish` folder |
+| `-DisableAppOffline` | off | Skip app_offline (slightly faster, but risk of 502s) |
+| `-DryRun` | off | Only print the msdeploy command |
+| `-RunMigrations` | off | Run `dotnet ef database update` BEFORE code deploy |
+| `-ConnectionString` | `""` | Required with `-RunMigrations` |
+| `-SkipHealthCheck` | off | Skip pre/post health verification |
+
+#### Incremental Deploy (Only Changed Files)
+
+For very quick updates when you only changed a few files:
 
 ```powershell
 pwsh ./deploy_incremental.ps1 -RunPublish
 ```
 
-Options:
-- `-RemoteHost` defaults to `nav.trimline.co.ke`
-- `-RemoteUser` defaults to `Administrator`
-- `-RemotePath` defaults to `D:\Parcel`
-- `-LocalPublishPath` defaults to `./publish`
+Keeps a manifest (`D:\Parcel\.deploy-manifest.json`) and uploads only files whose SHA256 hash changed.
 
-The script keeps a manifest on the server at `D:\Parcel\.deploy-manifest.json` and compares SHA256 hashes to send only changed files.
+### 🗄️ Database Migration Strategy
 
-### Web Deploy (Recommended for Fast IIS Deploys)
-
-Use Web Deploy to publish directly to IIS with automatic `app_offline.htm` handling during file sync.
-
-Server one-time setup (already applied on `nav.trimline.co.ke`):
+To avoid downtime during schema changes, **deploy migrations before code**:
 
 ```powershell
-sc config WMSVC start= auto
-net start WMSVC
-netsh advfirewall firewall add rule name=WebDeploy8172 dir=in action=allow protocol=TCP localport=8172
-```
+# 1. Apply new schema (old code still runs fine)
+dotnet ef database update --connection "..."
 
-Verify remote endpoint is reachable:
-
-```powershell
-Test-NetConnection nav.trimline.co.ke -Port 8172
-```
-
-Deploy command:
-
-```powershell
+# 2. Deploy new code (now compatible with new schema)
 pwsh ./deploy_webdeploy.ps1
+
+# OR in one step:
+pwsh ./deploy_webdeploy.ps1 -RunMigrations -ConnectionString "..."
 ```
 
-Useful options:
-- `-RemoteHost` defaults to `nav.trimline.co.ke`
-- `-RemotePort` defaults to `8172`
-- `-SiteName` defaults to `Parcel`
-- `-UserName` defaults to `Administrator`
-- `-SkipPublish` to deploy an already-built `./publish` folder
-- `-DryRun` to preview the `msdeploy` command
-- `-Password` to pass password non-interactively (for CI)
+**Rules for zero-downtime schema changes:**
+- ✅ Add new columns as **nullable** (old code ignores them)
+- ✅ Add new tables (old code doesn't reference them)
+- ❌ Never **rename** columns (add new, drop old in next deploy)
+- ❌ Never **remove** columns old code still references
 
-Example:
+### 🔍 Health Checks
+
+Two endpoints available:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/Health` | Lightweight — just returns 200 if app is alive |
+| `GET /api/Health/ready` | Deep check — verifies DB connectivity |
+
+The Android app can poll `/api/Health` and retry if it gets a non-200 response during deployment.
+
+### 📱 Android App Updates (AppUpdateController)
+
+The existing `AppUpdateController` serves APK version info. Configure in `appsettings.json`:
+
+```json
+"AppVersion": {
+  "Version": "2.1.0",
+  "VersionCode": 7,
+  "BuildDate": "2025-06-01",
+  "DownloadUrl": "https://yourdomain.com/ParcelApp/ParcelApp.apk",
+  "ReleaseNotes": "Bug fixes and performance improvements",
+  "ForceUpdate": false
+}
+```
+
+### 🔄 Rollback Plan
+
+If a deploy goes wrong:
 
 ```powershell
-pwsh ./deploy_webdeploy.ps1 -SiteName Parcel -UserName Administrator
+# Rollback using Web Deploy to previous version
+# (Keep a backup of the previous publish folder)
+pwsh ./deploy_webdeploy.ps1 -PublishPath ./publish_backup_v1 -SkipPublish
+```
+
+Or use the **incremental script** pointing to a backed-up manifest.
+
+### 📊 Monitoring
+
+- **Logs:** `Logs/parcel-api-YYYYMMDD.log` (Serilog rolling file)
+- **Health:** `GET /api/Health` endpoint
+- **IIS:** Check Event Viewer on the server
+
+---
+
+## Quick Start (for existing contributors)
+
+```bash
+git clone <repo>
+cd ParcelAPI
+dotnet restore
+dotnet build
+dotnet run
 ```
 
 ## Usage
