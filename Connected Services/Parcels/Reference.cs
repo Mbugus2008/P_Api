@@ -186,6 +186,8 @@ namespace Parcels
         
         private string batch_NoField;
         
+        private string deviceIdField;
+        
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
         public string Key
@@ -759,6 +761,20 @@ namespace Parcels
                 this.batch_NoField = value;
             }
         }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=28)]
+        public string deviceId
+        {
+            get
+            {
+                return this.deviceIdField;
+            }
+            set
+            {
+                this.deviceIdField = value;
+            }
+        }
     }
     
     /// <remarks/>
@@ -935,6 +951,9 @@ namespace Parcels
         
         /// <remarks/>
         Batch_No,
+        
+        /// <remarks/>
+        deviceId,
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
