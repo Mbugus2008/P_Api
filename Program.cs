@@ -7,6 +7,7 @@ using ParcelAPI.Filters;
 using ParcelAPI.Middleware;
 using ParcelAPI.Services;
 using Serilog;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableDateTimeConverter());
     });
@@ -77,6 +79,16 @@ app.UseSwaggerUI();
 // app.UseHttpsRedirection();  // disabled — HTTP used for older Android devices
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+var parcelAppPath = System.IO.Path.Combine(app.Environment.ContentRootPath, "ParcelApp");
+if (System.IO.Directory.Exists(parcelAppPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(parcelAppPath),
+        RequestPath = "/ParcelApp"
+    });
+}
 app.UseCors("AllowAll");
 
 // Add custom middleware for client identification
