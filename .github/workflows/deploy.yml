@@ -52,17 +52,24 @@ jobs:
           $deployUser = "${{ secrets.DEPLOY_USER }}"
           $deployPass = "${{ secrets.DEPLOY_PASSWORD }}"
 
+          $publishPath = Join-Path $env:GITHUB_WORKSPACE "publish"
           $computerName = "https://${remoteHost}:${port}/msdeploy.axd?site=${siteName}"
+
+          $sourceArg = "-source:contentPath=$publishPath"
           $destArg = "-dest:contentPath=${siteName},computerName=${computerName},userName=${deployUser},password=${deployPass},authType=Basic,includeAcls=False"
 
-          & $msdeploy -verb:sync `
-            -source:contentPath="./publish" `
-            $destArg `
-            -enableRule:AppOffline `
-            -enableRule:DoNotDeleteRule `
-            -retryAttempts:3 `
-            -retryInterval:5000 `
-            -allowUntrusted
+          $args = @(
+            "-verb:sync",
+            $sourceArg,
+            $destArg,
+            "-enableRule:AppOffline",
+            "-enableRule:DoNotDeleteRule",
+            "-retryAttempts:3",
+            "-retryInterval:5000",
+            "-allowUntrusted"
+          )
+
+          & $msdeploy @args
 
           if ($LASTEXITCODE -ne 0) {
             throw "msdeploy failed with exit code $LASTEXITCODE"
