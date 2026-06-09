@@ -3,7 +3,7 @@ name: Deploy ParcelAPI
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:       # allow manual trigger
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: '10.0.x'
@@ -11,7 +11,7 @@ env:
 
 jobs:
   build-and-deploy:
-    runs-on: windows-latest   # Windows needed for msdeploy
+    runs-on: windows-latest
     timeout-minutes: 15
 
     steps:
@@ -30,34 +30,46 @@ jobs:
         run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore
 
       - name: Publish
-        run: |
-          dotnet publish ${{ env.PROJECT_PATH }} `
-            -c Release `
-            -o ./publish `
-            --no-build
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o ./publish --no-build
+
+      - name: Install Web Deploy
+        run: choco install webdeploy -y --no-progress --limit-output
+        shell: powershell
 
       - name: Deploy via Web Deploy
+        shell: powershell
         run: |
-          # Install Web Deploy on the runner (if not present)
-          # This step assumes the GitHub runner has msdeploy or you use a self-hosted runner
+          $ErrorActionPreference = "Stop"
 
-          msdeploy.exe `
-            -verb:sync `
-            -source:contentPath='./publish' `
-            -dest:contentPath='${{ secrets.IIS_SITE_NAME }}', `
-                  computerName='https://${{ secrets.REMOTE_HOST }}:${{ secrets.MSDEPLOY_PORT }}/msdeploy.axd?site=${{ secrets.IIS_SITE_NAME }}', `
-                  userName='${{ secrets.DEPLOY_USER }}', `
-                  password='${{ secrets.DEPLOY_PASSWORD }}', `
-                  authType=Basic,includeAcls=False `
+          $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
+          if (-not (Test-Path $msdeploy)) {
+            $msdeploy = "C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe"
+          }
+
+          $siteName = "${{ secrets.IIS_SITE_NAME }}"
+          $remoteHost = "${{ secrets.REMOTE_HOST }}"
+          $port = "${{ secrets.MSDEPLOY_PORT }}"
+          $deployUser = "${{ secrets.DEPLOY_USER }}"
+          $deployPass = "${{ secrets.DEPLOY_PASSWORD }}"
+
+          $computerName = "https://${remoteHost}:${port}/msdeploy.axd?site=${siteName}"
+          $destArg = "-dest:contentPath=${siteName},computerName=${computerName},userName=${deployUser},password=${deployPass},authType=Basic,includeAcls=False"
+
+          & $msdeploy -verb:sync `
+            -source:contentPath="./publish" `
+            $destArg `
             -enableRule:AppOffline `
             -enableRule:DoNotDeleteRule `
             -retryAttempts:3 `
             -retryInterval:5000 `
             -allowUntrusted
-        shell: powershell
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "msdeploy failed with exit code $LASTEXITCODE"
+          }
         env:
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
-          MSDEPLOY_PORT: ${{ secrets.MSDEPLOY_PORT || '8172' }}
-          IIS_SITE_NAME: ${{ secrets.IIS_SITE_NAME || 'Parcel' }}
+          MSDEPLOY_PORT: ${{ secrets.MSDEPLOY_PORT }}
+          IIS_SITE_NAME: ${{ secrets.IIS_SITE_NAME }}
