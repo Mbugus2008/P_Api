@@ -188,6 +188,16 @@ namespace Parcels
         
         private string deviceIdField;
         
+        private string payment_Received_ByField;
+        
+        private string created_ByField;
+        
+        private string received_By_IDField;
+        
+        private string received_By_PhoneField;
+        
+        private string receiver_CodeField;
+        
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
         public string Key
@@ -775,6 +785,76 @@ namespace Parcels
                 this.deviceIdField = value;
             }
         }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=29)]
+        public string Payment_Received_By
+        {
+            get
+            {
+                return this.payment_Received_ByField;
+            }
+            set
+            {
+                this.payment_Received_ByField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=30)]
+        public string Created_By
+        {
+            get
+            {
+                return this.created_ByField;
+            }
+            set
+            {
+                this.created_ByField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=31)]
+        public string Received_By_ID
+        {
+            get
+            {
+                return this.received_By_IDField;
+            }
+            set
+            {
+                this.received_By_IDField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=32)]
+        public string Received_By_Phone
+        {
+            get
+            {
+                return this.received_By_PhoneField;
+            }
+            set
+            {
+                this.received_By_PhoneField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=33)]
+        public string Receiver_Code
+        {
+            get
+            {
+                return this.receiver_CodeField;
+            }
+            set
+            {
+                this.receiver_CodeField = value;
+            }
+        }
     }
     
     /// <remarks/>
@@ -954,6 +1034,21 @@ namespace Parcels
         
         /// <remarks/>
         deviceId,
+        
+        /// <remarks/>
+        Payment_Received_By,
+        
+        /// <remarks/>
+        Created_By,
+        
+        /// <remarks/>
+        Received_By_ID,
+        
+        /// <remarks/>
+        Received_By_Phone,
+        
+        /// <remarks/>
+        Receiver_Code,
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]

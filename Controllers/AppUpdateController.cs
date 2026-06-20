@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ParcelAPI.Models;
+using System.Text.Json;
 
 namespace ParcelAPI.Controllers
 {
@@ -9,22 +10,19 @@ namespace ParcelAPI.Controllers
     [AllowAnonymous]
     public class AppUpdateController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
         private readonly ILogger<AppUpdateController> _logger;
         private readonly IWebHostEnvironment _environment;
 
         public AppUpdateController(
-            IConfiguration configuration,
             ILogger<AppUpdateController> logger,
             IWebHostEnvironment environment)
         {
-            _configuration = configuration;
             _logger = logger;
             _environment = environment;
         }
 
         /// <summary>
-        /// Get the latest Android app version info.
+        /// Get the latest Android app version info from app_version.json in the ParcelApp folder.
         /// Does NOT require X-Client-Identifier header.
         /// </summary>
         [HttpGet("android")]
@@ -33,18 +31,38 @@ namespace ParcelAPI.Controllers
         {
             try
             {
-                var versionSection = _configuration.GetSection("AppVersion");
                 var request = HttpContext.Request;
                 var baseUrl = $"{request.Scheme}://{request.Host}";
+                var versionFilePath = Path.Combine(_environment.ContentRootPath, "ParcelApp", "app_version.json");
+
+                if (!System.IO.File.Exists(versionFilePath))
+                {
+                    _logger.LogWarning("app_version.json not found at {Path}", versionFilePath);
+                    return Ok(new Results<AppVersionInfo>
+                    {
+                        Code = 0,
+                        Desc = "No version file",
+                        Contents = new AppVersionInfo
+                        {
+                            Version = "0.0.0",
+                            VersionCode = 0,
+                            DownloadUrl = $"{baseUrl}/ParcelApp/ParcelApp.apk"
+                        }
+                    });
+                }
+
+                var json = System.IO.File.ReadAllText(versionFilePath);
+                var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
 
                 var versionInfo = new AppVersionInfo
                 {
-                    Version = versionSection["Version"] ?? "1.0.0",
-                    VersionCode = int.TryParse(versionSection["VersionCode"], out var code) ? code : 1,
-                    BuildDate = versionSection["BuildDate"] ?? DateTime.UtcNow.ToString("yyyy-MM-dd"),
-                    DownloadUrl = versionSection["DownloadUrl"] ?? $"{baseUrl}/ParcelApp/ParcelApp.apk",
-                    ReleaseNotes = versionSection["ReleaseNotes"],
-                    ForceUpdate = bool.TryParse(versionSection["ForceUpdate"], out var force) && force
+                    Version = root.TryGetProperty("version", out var v) ? v.GetString() ?? "1.0.0" : "1.0.0",
+                    VersionCode = root.TryGetProperty("versionCode", out var vc) ? vc.GetInt32() : 1,
+                    BuildDate = root.TryGetProperty("buildDate", out var bd) ? bd.GetString() ?? "" : "",
+                    DownloadUrl = root.TryGetProperty("downloadUrl", out var du) ? du.GetString() ?? $"{baseUrl}/ParcelApp/ParcelApp.apk" : $"{baseUrl}/ParcelApp/ParcelApp.apk",
+                    ReleaseNotes = root.TryGetProperty("releaseNotes", out var rn) ? rn.GetString() : null,
+                    ForceUpdate = root.TryGetProperty("forceUpdate", out var fu) && fu.GetBoolean()
                 };
 
                 return Ok(new Results<AppVersionInfo>
@@ -56,7 +74,7 @@ namespace ParcelAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving app version info");
+                _logger.LogError(ex, "Error reading app version info");
                 return StatusCode(500, new Results<object>
                 {
                     Code = -1,
