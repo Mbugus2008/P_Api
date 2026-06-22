@@ -54,6 +54,8 @@ builder.Services.AddScoped<IClientFactory, ClientFactory>();
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<ClientIdentifierFilter>();
 builder.Services.AddScoped<NavSmsService>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IEtimsService, EtimsService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
@@ -69,6 +71,35 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Ensure eTIMS table exists
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ParcelContext>();
+    try
+    {
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'EtimsSettings')
+            CREATE TABLE EtimsSettings (
+                Id INT IDENTITY(1,1) PRIMARY KEY,
+                ClientCode NVARCHAR(50) NOT NULL,
+                TinPin NVARCHAR(20) NOT NULL,
+                BranchId NVARCHAR(10) DEFAULT '00',
+                DeviceSerialNo NVARCHAR(100),
+                ApiUsername NVARCHAR(100),
+                ApiPassword NVARCHAR(200),
+                CmcKey NVARCHAR(100) NULL,
+                LastInvoiceNo INT DEFAULT 0,
+                Environment NVARCHAR(20) DEFAULT 'Sandbox',
+                IsActive BIT DEFAULT 1,
+                CreatedAt DATETIME2 DEFAULT GETUTCDATE()
+            )");
+        // Add columns if upgrading from older table
+        try { db.Database.ExecuteSqlRaw(@"ALTER TABLE EtimsSettings ADD CmcKey NVARCHAR(100) NULL"); } catch { }
+        try { db.Database.ExecuteSqlRaw(@"ALTER TABLE EtimsSettings ADD LastInvoiceNo INT DEFAULT 0"); } catch { }
+    }
+    catch { /* table may already exist */ }
+}
 
 // Configure the HTTP request pipeline
 app.UseSwagger();

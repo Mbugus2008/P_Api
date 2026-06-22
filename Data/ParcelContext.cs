@@ -12,6 +12,7 @@ namespace ParcelAPI.Data
 
         public DbSet<Client> Clients { get; set; }
         public DbSet<MpesaStkStatus> MpesaStkStatuses { get; set; }
+        public DbSet<EtimsSettings> EtimsSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -39,6 +40,20 @@ namespace ParcelAPI.Data
                 entity.Property(e => e.Reference).HasMaxLength(50);
                 entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
                 entity.HasIndex(e => e.CheckoutRequestId).IsUnique();
+            });
+
+            modelBuilder.Entity<EtimsSettings>(entity =>
+            {
+                entity.ToTable("EtimsSettings");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ClientCode).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.TinPin).HasMaxLength(20).IsRequired();
+                entity.Property(e => e.BranchId).HasMaxLength(10);
+                entity.Property(e => e.DeviceSerialNo).HasMaxLength(100);
+                entity.Property(e => e.ApiUsername).HasMaxLength(100);
+                entity.Property(e => e.ApiPassword).HasMaxLength(200);
+                entity.Property(e => e.Environment).HasMaxLength(20);
+                entity.HasIndex(e => e.ClientCode);
             });
 
 

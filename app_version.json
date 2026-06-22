@@ -1,1 +1,1 @@
-{ "version": "1.0.9", "versionCode": 31, "buildDate": "2026-06-20", "downloadUrl": "https://nav.trimline.co.ke:4013/ParcelApp/ParcelApp.apk", "releaseNotes": "OTP collection codes, My Collections report, payment tracking, UI improvements.", "forceUpdate": false }
+{ "version": "1.0.12", "versionCode": 35, "buildDate": "2026-06-22", "downloadUrl": "https://nav.trimline.co.ke:4013/ParcelApp/ParcelApp.apk", "releaseNotes": "Silent auto-update — no more ready dialog.", "forceUpdate": false }

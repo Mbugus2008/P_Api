@@ -5,7 +5,9 @@ param(
     [string]$LocalPublishPath = "",
     [switch]$RunPublish,
     [string]$ProjectPath = "",
-    [switch]$SkipManifestUpload
+    [switch]$SkipManifestUpload,
+    [switch]$CommitAndPush,
+    [string]$CommitMessage = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -168,6 +170,44 @@ Remove-Item '$RemotePath\\_delta.zip' -Force
     }
 
     Write-Host "Incremental deployment complete."
+
+    # --- Sync wwwroot static files ---
+    $wwwRootLocal = Join-Path $PSScriptRoot "wwwroot"
+    if (Test-Path $wwwRootLocal) {
+        Write-Host "Syncing wwwroot static files..."
+        $wwwFiles = Get-ChildItem -Path $wwwRootLocal -File
+        foreach ($f in $wwwFiles) {
+            $remoteWww = "$RemotePath/wwwroot/$($f.Name)"
+            Write-Host "  Uploading $($f.Name)..."
+            & scp $f.FullName "$remote`:$remoteWww"
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "  WARNING: Failed to upload $($f.Name)"
+            }
+        }
+        Write-Host "wwwroot sync complete."
+    }
+
+    # --- Auto commit & push to git ---
+    if ($CommitAndPush) {
+        $repoRoot = Split-Path -Path $PSScriptRoot -Parent
+        $msg = if ($CommitMessage) { $CommitMessage } else { "Deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')" }
+
+        Write-Host "Committing and pushing to git..."
+        Push-Location $repoRoot
+        try {
+            & git add -A
+            if ($LASTEXITCODE -ne 0) { throw "git add failed" }
+            & git commit -m $msg
+            # exit code 1 means nothing to commit — that's OK
+            if ($LASTEXITCODE -gt 1) { throw "git commit failed" }
+            & git push
+            if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+            Write-Host "Git commit & push complete."
+        }
+        finally {
+            Pop-Location
+        }
+    }
 }
 finally {
     if (Test-Path $tempRoot) {
