@@ -198,6 +198,12 @@ namespace Parcels
         
         private string receiver_CodeField;
         
+        private string app_VersionField;
+        
+        private decimal parcel_ValueField;
+        
+        private bool parcel_ValueFieldSpecified;
+        
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
         public string Key
@@ -855,6 +861,48 @@ namespace Parcels
                 this.receiver_CodeField = value;
             }
         }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=34)]
+        public string App_Version
+        {
+            get
+            {
+                return this.app_VersionField;
+            }
+            set
+            {
+                this.app_VersionField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=35)]
+        public decimal Parcel_Value
+        {
+            get
+            {
+                return this.parcel_ValueField;
+            }
+            set
+            {
+                this.parcel_ValueField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool Parcel_ValueSpecified
+        {
+            get
+            {
+                return this.parcel_ValueFieldSpecified;
+            }
+            set
+            {
+                this.parcel_ValueFieldSpecified = value;
+            }
+        }
     }
     
     /// <remarks/>
@@ -1049,6 +1097,12 @@ namespace Parcels
         
         /// <remarks/>
         Receiver_Code,
+        
+        /// <remarks/>
+        App_Version,
+        
+        /// <remarks/>
+        Parcel_Value,
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]

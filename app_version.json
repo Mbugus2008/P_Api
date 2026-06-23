@@ -1,1 +1,1 @@
-{ "version": "1.0.12", "versionCode": 35, "buildDate": "2026-06-22", "downloadUrl": "https://nav.trimline.co.ke:4013/ParcelApp/ParcelApp.apk", "releaseNotes": "Silent auto-update — no more ready dialog.", "forceUpdate": false }
+{ "version": "1.0.14", "versionCode": 39, "buildDate": "2026-06-22", "downloadUrl": "https://nav.trimline.co.ke:4013/ParcelApp/ParcelApp.apk", "releaseNotes": "Location code fix, Parcel Value field, self-update integrity check, dispatched batch visibility, Specified flags + backfill.", "forceUpdate": false }

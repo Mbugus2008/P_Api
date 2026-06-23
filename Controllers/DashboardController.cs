@@ -190,6 +190,33 @@ namespace ParcelAPI.Controllers
             }
         }
 
+        /// <summary>Parcels grouped by location AND status (stacked bar)</summary>
+        [HttpGet("parcels-by-location-status")]
+        [ServiceFilter(typeof(ClientIdentifierFilter))]
+        public async Task<ActionResult<Results<object[]>>> GetParcelsByLocationStatus()
+        {
+            try
+            {
+                var client = GetClient();
+                var parcels = await client.NavParcelService.ReadMultipleParcelsAsync(null, 0)
+                    ?? Array.Empty<Parcels.Parcel>();
+
+                var grouped = parcels
+                    .GroupBy(p => new { Location = p.From ?? "Unknown", Status = p.Status.ToString() })
+                    .Select(g => new { location = g.Key.Location, status = g.Key.Status, count = g.Count() })
+                    .OrderBy(x => x.location)
+                    .ThenBy(x => x.status)
+                    .ToArray();
+
+                return Ok(new Results<object[]> { Code = 0, Contents = grouped });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting parcels by location status");
+                return StatusCode(500, Err(ex.Message));
+            }
+        }
+
         /// <summary>Batches grouped by status</summary>
         [HttpGet("batches-by-status")]
         [ServiceFilter(typeof(ClientIdentifierFilter))]

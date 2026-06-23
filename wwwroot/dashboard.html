@@ -200,6 +200,10 @@ body::before {
     </div></div></div></div>
   </div>
 
+  <div class="row g-3 mb-4">
+    <div class="col-12"><div class="card"><div class="card-body"><h5 class="card-title"><i class="bi bi-bar-chart-steps text-purple"></i>Parcels by Location & Status</h5><div class="chart-container-md position-relative"><div id="l7" class="loading-overlay d-none"><div class="spinner-border text-purple pulse"></div></div><canvas id="chartStackLocationStatus"></canvas></div></div></div></div>
+  </div>
+
   <div class="row g-3">
     <div class="col-12"><div class="card"><div class="card-body"><h5 class="card-title"><i class="bi bi-clock-history text-secondary"></i>Recent Parcels</h5><div class="table-responsive" style="max-height:420px;overflow-y:auto;"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>Document No</th><th>Sender</th><th>Receiver</th><th>From</th><th>To</th><th>Status</th><th>Payment</th><th>Amount</th><th>Created</th></tr></thead><tbody id="recentParcelsBody"><tr><td colspan="9" class="text-center text-muted py-4">Select a client to load data</td></tr></tbody></table></div></div></div></div>
   </div>
@@ -270,12 +274,13 @@ async function loadDashboard(clientCode) {
   showAllLoading(true);
   try {
     const headers = { [CLIENT_HEADER]: clientCode };
-    const [summary, status, timeData, payment, location, batches, whoPay, paid, recent, mpesa] = await Promise.all([
+    const [summary, status, timeData, payment, location, batches, whoPay, paid, recent, mpesa, locStatus] = await Promise.all([
       fetch(`${API_BASE}/api/Dashboard/summary`, { headers }).then(r => r.json()),
       fetch(`${API_BASE}/api/Dashboard/parcels-by-status`, { headers }).then(r => r.json()),
       fetch(`${API_BASE}/api/Dashboard/parcels-over-time`, { headers }).then(r => r.json()),
       fetch(`${API_BASE}/api/Dashboard/payment-methods`, { headers }).then(r => r.json()),
       fetch(`${API_BASE}/api/Dashboard/parcels-by-location`, { headers }).then(r => r.json()),
+      fetch(`${API_BASE}/api/Dashboard/parcels-by-location-status`, { headers }).then(r => r.json()),
       fetch(`${API_BASE}/api/Dashboard/batches-by-status`, { headers }).then(r => r.json()),
       fetch(`${API_BASE}/api/Dashboard/who-to-pay`, { headers }).then(r => r.json()),
       fetch(`${API_BASE}/api/Dashboard/paid-vs-unpaid`, { headers }).then(r => r.json()),
@@ -288,6 +293,7 @@ async function loadDashboard(clientCode) {
     updateParcelsOverTime(timeData);
     updatePaymentMethods(payment);
     updateLocations(location);
+    updateLocationStatus(locStatus);
     updateBatches(batches);
     updateWhoPay(whoPay);
     updatePaidVsUnpaid(paid);
@@ -299,7 +305,7 @@ async function loadDashboard(clientCode) {
 
 function refreshAll() { if (currentClient) loadDashboard(currentClient); }
 function showAllLoading(show) {
-  for (let i=0;i<7;i++) { const el = document.getElementById('l'+i); if (el) el.classList.toggle('d-none', !show); }
+  for (let i=0;i<8;i++) { const el = document.getElementById('l'+i); if (el) el.classList.toggle('d-none', !show); }
 }
 
 function updateSummary(data) {
@@ -371,6 +377,28 @@ function updateLocations(data) {
     options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ display:false } },
       scales:{ x:{ beginAtZero:true, grid:{ color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'} } } }
+  });
+}
+
+function updateLocationStatus(data) {
+  if (!data?.contents || !data.contents.length) return;
+  const locations = [...new Set(data.contents.map(d => d.location))].sort();
+  const statuses = [...new Set(data.contents.map(d => d.status.replace(/_/g,' ')))];
+  const statusColors = { 'Pending':'#f6c23e','In Transit':'#e74a3b','Received':'#4e73df','Collected':'#1cc88a','Waiting Collection':'#6f42c1' };
+  const datasets = statuses.map(s => ({
+    label: s, data: locations.map(loc => {
+      const match = data.contents.find(d => d.location===loc && (d.status||'').replace(/_/g,' ')===s);
+      return match ? match.count : 0;
+    }),
+    backgroundColor: statusColors[s] || '#858796',
+    borderRadius: 6, borderSkipped: false
+  }));
+  charts.stackLocStatus = new Chart(document.getElementById('chartStackLocationStatus'), {
+    type: 'bar',
+    data: { labels: locations, datasets },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{ padding:16, usePointStyle:true } } },
+      scales:{ x:{ stacked:true, grid:{ display:false } }, y:{ stacked:true, beginAtZero:true, title:{ display:true, text:'Parcel Count' }, grid:{ color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'} } } }
   });
 }
 

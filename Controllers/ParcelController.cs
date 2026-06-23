@@ -155,6 +155,9 @@ namespace ParcelAPI.Controllers
 
                 ApplyParcelSpecifiedFlags(parcel);
 
+                _logger.LogInformation("CreateNavParcel: DocNo={DocNo}, App_Version={AppVersion}",
+                    parcel.Document_No, parcel.App_Version ?? "(null)");
+
                 var createdParcel = await Client.NavParcelService.CreateParcelAsync(parcel);
                 return Ok(new Results<Parcels.Parcel> { Code = 0, Desc = $"Parcel created: {createdParcel.Document_No}", Contents = createdParcel });
             }
@@ -175,6 +178,9 @@ namespace ParcelAPI.Controllers
                     return BadRequest(new Results<Parcels.Parcel> { Code = -1, Desc = "NAV Parcel Service not available" });
 
                 ApplyParcelSpecifiedFlags(parcel);
+
+                _logger.LogInformation("UpdateNavParcel: DocNo={DocNo}, App_Version={AppVersion}",
+                    parcel.Document_No, parcel.App_Version ?? "(null)");
 
                 var updatedParcel = await Client.NavParcelService.UpdateParcelAsync(parcel);
                 return Ok(new Results<Parcels.Parcel> { Code = 0, Desc = "Parcel updated", Contents = updatedParcel });
@@ -614,11 +620,13 @@ namespace ParcelAPI.Controllers
             parcel.PaidSpecified = true;
             parcel.Date_CollectedSpecified = HasDateValue(parcel.Date_Collected);
             parcel.Date_DeliveredSpecified = HasDateValue(parcel.Date_Delivered);
+            parcel.Date_CreatedSpecified = HasDateValue(parcel.Date_Created);
             parcel.Time_CreatedSpecified = HasDateValue(parcel.Time_Created);
             parcel.Time_SentSpecified = HasDateValue(parcel.Time_Sent);
             parcel.Time_CollectedSpecified = HasDateValue(parcel.Time_Collected);
             parcel.Time_DeliveredSpecified = HasDateValue(parcel.Time_Delivered);
             parcel.Payment_MethodSpecified = true;
+            parcel.Parcel_ValueSpecified = true;
         }
 
         private static void ApplyBatchSpecifiedFlags(NavBatches.ParcelBatches batch)
