@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 :root{--card-radius:20px;--transition:0.3s cubic-bezier(0.4,0,0.2,1);--glass-bg:rgba(255,255,255,0.72);--glass-border:rgba(255,255,255,0.35);--glass-shadow:0 8px 32px rgba(0,0,0,0.06)}
 [data-bs-theme="dark"]{--bs-body-bg:#0a0b10;--bs-body-color:#e4e6f0;--bs-border-color:#1e2030;--glass-bg:rgba(20,22,37,0.8);--glass-border:rgba(255,255,255,0.08);--glass-shadow:0 8px 32px rgba(0,0,0,0.35)}
@@ -44,7 +43,7 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
 [data-bs-theme="dark"] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1)}
-@media(max-width:768px){.stat-number{font-size:1.3rem}.chart-container,.chart-container-sm{height:240px}.navbar .btn-group-sm .btn{font-size:0.7rem;padding:2px 5px}.navbar input[type=date]{width:110px!important;font-size:0.75rem}.navbar-brand{font-size:0.85rem}}
+@media(max-width:768px){.stat-number{font-size:1.3rem}.chart-container,.chart-container-sm{height:240px}}
 </style>
 </head>
 <body>
@@ -54,22 +53,15 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
     <span class="navbar-brand fw-bold d-flex align-items-center gap-2">
       <i class="bi bi-box-seam text-primary"></i> Parcel Dashboard
     </span>
-    <div class="d-flex align-items-center gap-2 ms-auto flex-wrap justify-content-end">
-      <div class="btn-group btn-group-sm">
-        <button class="btn btn-outline-secondary" onclick="setRange('today')">Today</button>
-        <button class="btn btn-outline-secondary" onclick="setRange('week')">Week</button>
-        <button class="btn btn-outline-secondary" onclick="setRange('month')">Month</button>
-        <button class="btn btn-outline-secondary" onclick="setRange('all')">All</button>
-      </div>
-      <input type="date" id="dateFrom" class="form-control form-control-sm" style="width:130px" onchange="refreshAll()">
+    <div class="d-flex align-items-center gap-2 ms-auto">
+      <input type="date" id="dateFrom" class="form-control form-control-sm" style="width:140px" onchange="refreshAll()">
       <span class="text-muted" style="font-size:0.8rem">to</span>
-      <input type="date" id="dateTo" class="form-control form-control-sm" style="width:130px" onchange="refreshAll()">
+      <input type="date" id="dateTo" class="form-control form-control-sm" style="width:140px" onchange="refreshAll()">
       <div class="form-check form-switch mb-0">
         <input class="form-check-input" type="checkbox" id="themeToggle" onchange="toggleTheme()">
         <label class="form-check-label" for="themeToggle"><i class="bi bi-moon-stars"></i></label>
       </div>
-      <button class="btn btn-sm btn-outline-secondary" id="btnRefresh" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i></button>
-      <button class="btn btn-sm btn-outline-secondary" onclick="shareDashboard()" title="Share"><i class="bi bi-share"></i></button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i></button>
     </div>
   </div>
 </nav>
@@ -159,10 +151,6 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
     </div></div></div>
   </div>
 
-  <!-- Detail Modal -->
-  <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0 pb-1"><h5 class="modal-title" id="detailTitle"></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="detailBody"></div></div></div>
-  </div>
 </main>
 
 <script>
@@ -258,7 +246,7 @@ async function loadRevenueByLocation() {
       options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => kes(c.raw) + ' | ' + d[c.dataIndex].count + ' parcels' } } },
         scales: { x: { grid: { color: t.gridColor }, ticks: { color: t.color, callback: v => k(v) } }, y: { grid: { display: false }, ticks: { color: t.color } } },
-        onClick: (_, el) => { if (el.length) { const i = el[0].index; showDetail(d[i].location, '<p class="mb-1">Revenue: <b>' + kes(d[i].revenue) + '</b></p><p class="mb-0">Parcels: <b>' + d[i].count + '</b></p>'); } }
+        onClick: (_, el) => { if (el.length) { const i = el[0].index; alert(d[i].location + '\nRevenue: ' + kes(d[i].revenue) + '\nParcels: ' + d[i].count); } }
       }
     });
   } catch(e) { document.getElementById('lRevLoc')?.classList.add('d-none'); }
@@ -411,78 +399,6 @@ function defaultDates() {
   if (dt && !dt.value) dt.value = today;
 }
 
-function setRange(period) {
-  const today = new Date();
-  const fmt = d => d.toISOString().split('T')[0];
-  const df = document.getElementById('dateFrom');
-  const dt = document.getElementById('dateTo');
-  if (period === 'today') { df.value = fmt(today); dt.value = fmt(today); }
-  else if (period === 'week') { const w = new Date(today); w.setDate(today.getDate() - 7); df.value = fmt(w); dt.value = fmt(today); }
-  else if (period === 'month') { const m = new Date(today); m.setMonth(today.getMonth() - 1); df.value = fmt(m); dt.value = fmt(today); }
-  else if (period === 'all') { df.value = ''; dt.value = ''; }
-  refreshAll();
-}
-
-function showDetail(title, body) {
-  document.getElementById('detailTitle').textContent = title;
-  document.getElementById('detailBody').innerHTML = body;
-  new bootstrap.Modal(document.getElementById('detailModal')).show();
-}
-
-async function shareDashboard() {
-  const btn = document.querySelector('[onclick="shareDashboard()"]');
-  const orig = btn.innerHTML;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-  btn.disabled = true;
-  try {
-    const canvas = await html2canvas(document.querySelector('main'), { backgroundColor: null, scale: 2 });
-    canvas.toBlob(async blob => {
-      btn.innerHTML = orig; btn.disabled = false;
-      if (navigator.canShare && navigator.canShare({ files: [new File([blob], 'dashboard.png', {type:'image/png'})] })) {
-        try {
-          await navigator.share({ files: [new File([blob], 'dashboard.png', {type:'image/png'})], title: 'Parcel Dashboard' });
-        } catch(e) {}
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'dashboard.png'; a.click();
-        URL.revokeObjectURL(url);
-        btn.innerHTML = '<i class="bi bi-check-lg"></i>';
-        setTimeout(() => { btn.innerHTML = orig; }, 1500);
-      }
-    }, 'image/png');
-  } catch(e) {
-    btn.innerHTML = orig; btn.disabled = false;
-    // Fallback: copy URL
-    await navigator.clipboard.writeText(location.href);
-    btn.innerHTML = '<i class="bi bi-check-lg"></i>';
-    setTimeout(() => { btn.innerHTML = orig; }, 1500);
-  }
-}
-
-// Export location cards as CSV
-function exportLocationsCSV() {
-  const cards = document.querySelectorAll('#rowLocationCards .card');
-  if (!cards.length) return;
-  let csv = 'Location,Total,In Transist,Waiting Collection,Collected\\n';
-  cards.forEach(card => {
-    const loc = card.querySelector('h6')?.childNodes[1]?.textContent?.trim() || '';
-    const total = card.querySelector('.badge.bg-secondary')?.textContent?.trim() || '0';
-    const chips = card.querySelectorAll('.d-flex.flex-wrap .badge');
-    const counts = { 'In Transist': '0', 'Waiting Collection': '0', 'Collected': '0' };
-    chips.forEach(chip => {
-      const txt = chip.textContent || '';
-      for (const k of Object.keys(counts)) {
-        if (txt.includes(k)) { counts[k] = chip.querySelector('span:last-child')?.textContent?.trim() || '0'; }
-      }
-    });
-    csv += `"${loc}",${total},${counts['In Transist']},${counts['Waiting Collection']},${counts['Collected']}\\n`;
-  });
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'location-summary.csv'; a.click();
-  URL.revokeObjectURL(url);
-}
-
 async function loadDailyRevenue() {
   showLoading('lDaily');
   try {
@@ -513,7 +429,7 @@ async function loadLocationStatus() {
   const container = document.getElementById('rowLocationCards');
   try {
     const d = await API.get('parcels-by-location-status');
-    if (!d || !d.length) { container.innerHTML = '<div class="col-12"><div class="card"><div class="card-body text-center text-muted py-3"><i class="bi bi-geo-alt fs-3 d-block mb-2"></i>No locations with parcels for this date range.</div></div></div>'; return; }
+    if (!d || !d.length) { container.innerHTML = '<div class="col-12 text-muted text-center py-3">No data</div>'; return; }
 
     // Group by location
     const map = {};
@@ -538,17 +454,11 @@ async function loadLocationStatus() {
       });
       html += '</div></div></div></div>';
     });
-    // Add export button if there's data
-    html += '<div class="col-12 text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="exportLocationsCSV()"><i class="bi bi-download me-1"></i>Export CSV</button></div>';
     container.innerHTML = html;
   } catch(e) { container.innerHTML = '<div class="col-12 text-muted text-center py-3">Failed to load</div>'; }
 }
 
 async function refreshAll() {
-  const btn = document.getElementById('btnRefresh');
-  const icon = btn?.querySelector('i');
-  if (btn) btn.disabled = true;
-  if (icon) { icon.className = 'bi bi-arrow-clockwise pulse'; }
   await Promise.all([
     loadSummary(), loadRevenueByLocation(), loadRevenueByVehicle(),
     loadParcelsByLocation(), loadParcelsByVehicle(), loadLocationStatus(),
@@ -556,8 +466,6 @@ async function refreshAll() {
     loadParcelsByStatus(), loadPaymentMethods(),
     loadPaidVsUnpaid(), loadBatches()
   ]);
-  if (btn) btn.disabled = false;
-  if (icon) { icon.className = 'bi bi-arrow-clockwise'; }
 }
 
 defaultDates();

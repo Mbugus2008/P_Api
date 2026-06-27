@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parcel Dashboard Pro</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{--card-radius:20px;--transition:0.3s cubic-bezier(0.4,0,0.2,1);--glass-bg:rgba(255,255,255,0.72);--glass-border:rgba(255,255,255,0.35);--glass-shadow:0 8px 32px rgba(0,0,0,0.06)}
+[data-bs-theme="dark"]{--bs-body-bg:#0a0b10;--bs-body-color:#e4e6f0;--bs-border-color:#1e2030;--glass-bg:rgba(20,22,37,0.8);--glass-border:rgba(255,255,255,0.08);--glass-shadow:0 8px 32px rgba(0,0,0,0.35)}
+*{box-sizing:border-box}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#f0f4ff 0%,#e8f0fe 25%,#f5f0ff 50%,#fef5e7 75%,#e8faf0 100%);background-attachment:fixed;min-height:100vh;color:#1a1a2e;transition:background 0.5s,color 0.3s}
+[data-bs-theme="dark"] body{background:linear-gradient(135deg,#0a0b10 0%,#0f1119 30%,#12142a 60%,#0a0d18 100%);background-attachment:fixed;color:#e4e6f0}
+body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 20% 30%,rgba(78,115,223,0.06) 0%,transparent 50%),radial-gradient(circle at 80% 60%,rgba(28,200,138,0.05) 0%,transparent 50%),radial-gradient(circle at 40% 80%,rgba(246,194,62,0.05) 0%,transparent 50%);pointer-events:none;z-index:0;animation:orbFloat 20s ease-in-out infinite}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(1%,-1%) rotate(1deg)}66%{transform:translate(-1%,1%) rotate(-1deg)}}
+.navbar{background:var(--glass-bg)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border)!important;z-index:1000;position:relative}
+.card{background:var(--glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--glass-border);border-radius:var(--card-radius);box-shadow:var(--glass-shadow);transition:transform var(--transition),box-shadow var(--transition);overflow:hidden;position:relative;z-index:1}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.1) 0%,transparent 50%);pointer-events:none;z-index:0}
+.card>*{position:relative;z-index:1}
+.card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.12)}
+[data-bs-theme="dark"] .card:hover{box-shadow:0 12px 48px rgba(0,0,0,0.55)}
+.stat-card{border-left:5px solid transparent;transition:all var(--transition)}
+.stat-card.parcels{border-left-color:#4e73df}
+.stat-card.revenue{border-left-color:#1cc88a}
+.stat-card.intransit{border-left-color:#f6c23e}
+.stat-card.awaiting{border-left-color:#e74a3b}
+.stat-card.collected{border-left-color:#36b9cc}
+.stat-number{font-size:1.6rem;font-weight:800;letter-spacing:-0.5px}
+.stat-badge{font-size:0.65rem;padding:1px 5px;border-radius:4px;font-weight:700}
+.stat-badge.up{background:#d4edda;color:#155724}
+.stat-badge.down{background:#f8d7da;color:#721c24}
+.stat-badge.flat{background:#e2e3e5;color:#383d41}
+.chart-container{position:relative;height:340px}
+.chart-container-sm{position:relative;height:280px}
+.loading-overlay{position:absolute;inset:0;background:var(--glass-bg);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:var(--card-radius)}
+.card-title{font-weight:700;font-size:0.95rem;letter-spacing:-0.2px;display:flex;align-items:center;gap:8px}
+.card-title i{font-size:1.1rem;opacity:0.7}
+.form-select,.btn{background:rgba(255,255,255,0.6);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:12px;transition:all var(--transition)}
+.form-select:focus,.btn:focus{box-shadow:0 0 0 3px rgba(78,115,223,0.2)}
+[data-bs-theme="dark"] .form-select,[data-bs-theme="dark"] .btn{background:rgba(255,255,255,0.06)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+.alert-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700}
+.stuck-alert{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.unpaid-alert{background:#f8d7da;color:#721c24;border:1px solid #dc3545}
+.leaderboard-item{display:flex;align-items:center;padding:6px 8px;border-radius:8px;transition:background 0.2s}
+.leaderboard-item:hover{background:rgba(0,0,0,0.03)}
+.leaderboard-rank{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;margin-right:8px}
+.leaderboard-rank.top{background:#ffd700;color:#000}
+.leaderboard-rank.silver{background:#c0c0c0;color:#000}
+.leaderboard-rank.bronze{background:#cd7f32;color:#fff}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.status-pending{background:#e2e3e5;color:#383d41}
+.status-intransit{background:#fff3cd;color:#856404}
+.status-received{background:#cce5ff;color:#004085}
+.status-collected{background:#d4edda;color:#155724}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1)}
+@media(max-width:768px){.stat-number{font-size:1.2rem}.chart-container,.chart-container-sm{height:240px}}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container-fluid px-3">
+    <span class="navbar-brand fw-bold d-flex align-items-center gap-2">
+      <i class="bi bi-box-seam text-primary"></i> Parcel Dashboard
+      <span class="live-dot pulse" style="width:8px;height:8px;border-radius:50%;background:#1cc88a;display:inline-block;margin-left:4px" title="Live auto-refresh"></span>
+    </span>
+    <div class="d-flex align-items-center gap-2 ms-auto">
+      <input type="text" id="searchInput" class="form-control form-control-sm" style="width:200px" placeholder="Search..." oninput="onSearch()">
+      <input type="date" id="dateFrom" class="form-control form-control-sm" style="width:140px" onchange="refreshAll()">
+      <span class="text-muted" style="font-size:0.8rem">to</span>
+      <input type="date" id="dateTo" class="form-control form-control-sm" style="width:140px" onchange="refreshAll()">
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" id="themeToggle" onchange="toggleTheme()">
+        <label class="form-check-label" for="themeToggle"><i class="bi bi-moon-stars"></i></label>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i></button>
+      <button class="btn btn-sm btn-outline-primary" onclick="exportPDF()" title="Export to PDF"><i class="bi bi-file-pdf"></i></button>
+    </div>
+  </div>
+</nav>
+
+<main class="container-fluid px-3 py-4" style="position:relative;z-index:1">
+
+  <!-- Stats Row with Today vs Yesterday badges -->
+  <div class="row g-3 mb-3" id="statsRow">
+    <div class="col-6 col-lg"><div class="card stat-card parcels"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.65rem;letter-spacing:1px">Parcels</small><div class="stat-number" id="statParcels">--</div></div><i class="bi bi-box-seam text-primary" style="font-size:2rem;opacity:0.3"></i></div><div id="badgeParcels"></div></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card revenue"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.65rem;letter-spacing:1px">Revenue</small><div class="stat-number" id="statRevenue">--</div></div><i class="bi bi-cash-stack text-success" style="font-size:2rem;opacity:0.3"></i></div><div id="badgeRevenue"></div></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card intransit"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.65rem;letter-spacing:1px">In Transit</small><div class="stat-number" id="statInTransit">--</div></div><i class="bi bi-truck text-warning" style="font-size:2rem;opacity:0.3"></i></div><div id="badgeInTransit"></div></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card awaiting"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.65rem;letter-spacing:1px">Awaiting</small><div class="stat-number" id="statAwaiting">--</div></div><i class="bi bi-inbox-fill text-danger" style="font-size:2rem;opacity:0.3"></i></div><div id="badgeAwaiting"></div></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card collected"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.65rem;letter-spacing:1px">Collected</small><div class="stat-number" id="statCollected">--</div></div><i class="bi bi-check2-circle text-info" style="font-size:2rem;opacity:0.3"></i></div><div id="badgeCollected"></div></div></div></div>
+  </div>
+
+  <!-- Alert row: stuck + unpaid -->
+  <div class="row g-3 mb-4" id="alertRow" style="display:none">
+    <div class="col-auto" id="stuckAlert"></div>
+    <div class="col-auto" id="unpaidAlert"></div>
+  </div>
+
+  <!-- Analytics row: avg times -->
+  <div class="row g-3 mb-4" id="analyticsRow" style="display:none">
+    <div class="col-6 col-lg-3"><div class="card"><div class="card-body text-center"><small class="text-muted text-uppercase fw-semibold" style="font-size:0.6rem">Avg Delivery</small><div class="fw-bold" style="font-size:1.4rem" id="analyticsDelivery">--</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card"><div class="card-body text-center"><small class="text-muted text-uppercase fw-semibold" style="font-size:0.6rem">Avg Collection</small><div class="fw-bold" style="font-size:1.4rem" id="analyticsCollection">--</div></div></div></div>
+  </div>
+
+  <!-- Revenue charts -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-geo-alt-fill text-success"></i>Revenue by Location <small class="text-muted fw-normal" style="font-size:0.65rem">Top 15 — click to drill</small></h5>
+      <div class="chart-container position-relative"><div id="lRevLoc" class="loading-overlay d-none"><div class="spinner-border text-success pulse"></div></div><canvas id="chartRevLocation"></canvas></div>
+    </div></div></div>
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-truck-front-fill text-warning"></i>Revenue by Vehicle <small class="text-muted fw-normal" style="font-size:0.65rem">Top 15</small></h5>
+      <div class="chart-container position-relative"><div id="lRevVeh" class="loading-overlay d-none"><div class="spinner-border text-warning pulse"></div></div><canvas id="chartRevVehicle"></canvas></div>
+    </div></div></div>
+  </div>
+
+  <!-- Daily Revenue & Parcels with 7-day MA -->
+  <div class="row g-3 mb-4">
+    <div class="col-12"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-bar-chart-fill text-primary"></i>Daily Revenue & Parcels <small class="text-muted fw-normal" style="font-size:0.65rem">+7-day avg</small></h5>
+      <div class="chart-container position-relative"><div id="lDaily" class="loading-overlay d-none"><div class="spinner-border text-primary pulse"></div></div><canvas id="chartDailyRev"></canvas></div>
+    </div></div></div>
+  </div>
+
+  <!-- Top Senders + Top Receivers -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-person-arrow-up-fill text-primary"></i>Top Senders</h5>
+      <div id="topSenders"><small class="text-muted">Loading...</small></div>
+    </div></div></div>
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-person-arrow-down-fill text-info"></i>Top Receivers</h5>
+      <div id="topReceivers"><small class="text-muted">Loading...</small></div>
+    </div></div></div>
+  </div>
+
+  <!-- Status journey -->
+  <div class="row g-3 mb-4">
+    <div class="col-12"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-arrow-left-right text-secondary"></i>Parcel Journey</h5>
+      <div id="journeyBar" style="display:flex;align-items:center;gap:0">
+        <div id="journeyPending" class="text-center" style="flex:1"><div class="fw-bold" id="jPending">--</div><small class="text-muted">Pending</small></div>
+        <i class="bi bi-arrow-right text-muted"></i>
+        <div id="journeyTransit" class="text-center" style="flex:1"><div class="fw-bold" id="jTransit">--</div><small class="text-muted">In Transit</small></div>
+        <i class="bi bi-arrow-right text-muted"></i>
+        <div id="journeyReceived" class="text-center" style="flex:1"><div class="fw-bold" id="jReceived">--</div><small class="text-muted">Awaiting</small></div>
+        <i class="bi bi-arrow-right text-muted"></i>
+        <div id="journeyCollected" class="text-center" style="flex:1"><div class="fw-bold text-success" id="jCollected">--</div><small class="text-muted">Collected</small></div>
+      </div>
+    </div></div></div>
+  </div>
+
+  <!-- Pie charts row -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-pie-chart-fill text-primary"></i>Parcels by Status</h5>
+      <div class="chart-container-sm position-relative"><div id="lStatus" class="loading-overlay d-none"><div class="spinner-border text-primary pulse"></div></div><canvas id="chartPieStatus"></canvas></div>
+    </div></div></div>
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-credit-card-fill text-success"></i>Payment Methods</h5>
+      <div class="chart-container-sm position-relative"><div id="lPay" class="loading-overlay d-none"><div class="spinner-border text-success pulse"></div></div><canvas id="chartPiePayment"></canvas></div>
+    </div></div></div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-4"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-truck text-indigo" style="color:#6f42c1"></i>Parcels by Vehicle</h5>
+      <div class="chart-container-sm position-relative"><div id="lVeh" class="loading-overlay d-none"><div class="spinner-border text-primary pulse"></div></div><canvas id="chartBarVehicle"></canvas></div>
+    </div></div></div>
+    <div class="col-lg-4"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-check-circle-fill text-info"></i>Paid vs Unpaid</h5>
+      <div class="chart-container-sm position-relative"><div id="lPaid" class="loading-overlay d-none"><div class="spinner-border text-info pulse"></div></div><canvas id="chartDoughnutPaid"></canvas></div>
+    </div></div></div>
+    <div class="col-lg-4"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-diagram-3-fill text-warning"></i>Batches by Status</h5>
+      <div class="chart-container-sm position-relative"><div id="lBatch" class="loading-overlay d-none"><div class="spinner-border text-warning pulse"></div></div><canvas id="chartDoughnutBatch"></canvas></div>
+    </div></div></div>
+  </div>
+
+</main>
+
+<div class="modal fade" id="drillModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="drillTitle">Details</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="drillBody"></div></div></div>
+</div>
+
+<script>
+// ── API module ──
+const API = (() => {
+  const u = new URLSearchParams(location.search);
+  let clientId = u.get('client') || '';
+  function headers() { const h = {}; if (clientId) h['X-Client-Identifier'] = clientId; return h; }
+  function dateParams() {
+    const f = document.getElementById('dateFrom')?.value;
+    const t = document.getElementById('dateTo')?.value;
+    const p = [];
+    if (f) p.push('from=' + f);
+    if (t) p.push('to=' + t);
+    return p.length ? '?' + p.join('&') : '';
+  }
+  async function get(path) {
+    const r = await fetch('/api/dashboard/' + path + dateParams(), { headers: headers() });
+    if (!r.ok) throw new Error(path + ': ' + r.status);
+    const j = await r.json();
+    return j.contents || j;
+  }
+  return { get, getClientId: () => clientId, setClientId: (id) => { clientId = id; } };
+})();
+
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', { color:'#555',font:{weight:'bold',size:10},anchor:'end',align:'end',offset:2,formatter:(v)=>v>0?v:''});
+Chart.overrides.doughnut.plugins.datalabels = { anchor:'center',align:'center',offset:0,font:{weight:'bold',size:11} };
+
+const colors = ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#6f42c1','#fd7e14','#20c997','#0dcaf0','#d63384'];
+const chartTheme = () => ({
+  color: document.documentElement.dataset.bsTheme === 'dark' ? '#e4e6f0' : '#6c757d',
+  gridColor: document.documentElement.dataset.bsTheme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+});
+
+const charts = {};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function showLoading(id) { document.getElementById(id)?.classList.remove('d-none'); }
+function hideLoading(id) { document.getElementById(id)?.classList.add('d-none'); }
+function k(num) { if (num == null) return '--'; const n = Number(num); return n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n.toLocaleString(); }
+function kes(num) { const n = Number(num||0); return 'KES ' + n.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); }
+
+// ── Search ──
+let searchTerm = '';
+function onSearch() { searchTerm = document.getElementById('searchInput').value.trim().toLowerCase(); refreshAll(); }
+
+// ── Comparative summary ──
+async function loadComparativeSummary() {
+  try {
+    const d = await API.get('comparative-summary');
+    const t = d.today, y = d.yesterday;
+    const anim = (id, v) => animateNumber(id, v);
+    anim('statParcels', t.parcels);
+    anim('statRevenue', t.revenue);
+    anim('statInTransit', t.inTransit);
+    anim('statAwaiting', t.awaiting);
+    anim('statCollected', t.collected);
+
+    function badge(id, today, yesterday, fmt) {
+      const el = document.getElementById(id);
+      if (!el || !yesterday) { el.innerHTML = ''; return; }
+      const diff = today - yesterday;
+      const pct = yesterday ? Math.round((diff / yesterday) * 100) : 0;
+      if (pct > 0) el.innerHTML = `<span class="stat-badge up">▲ ${pct}% vs yesterday</span>`;
+      else if (pct < 0) el.innerHTML = `<span class="stat-badge down">▼ ${Math.abs(pct)}% vs yesterday</span>`;
+      else el.innerHTML = `<span class="stat-badge flat">= same</span>`;
+    }
+    badge('badgeParcels', t.parcels, y.parcels);
+    badge('badgeRevenue', t.revenue, y.revenue);
+    badge('badgeCollected', t.collected, y.collected);
+  } catch(e) { console.error('comparative', e); }
+}
+
+// ── Analytics ──
+async function loadAnalytics() {
+  try {
+    const d = await API.get('analytics');
+    document.getElementById('analyticsDelivery').textContent = d.avgDeliveryHours > 0 ? d.avgDeliveryHours + ' hrs' : '--';
+    document.getElementById('analyticsCollection').textContent = d.avgCollectionHours > 0 ? d.avgCollectionHours + ' hrs' : '--';
+    document.getElementById('analyticsRow').style.display = (d.totalDelivered > 0 || d.totalCollected > 0) ? '' : 'none';
+  } catch(e) { console.error('analytics', e); }
+}
+
+// ── Alerts ──
+async function loadAlerts() {
+  try {
+    const stuck = await API.get('stuck-parcels');
+    const unpaid = await API.get('unpaid-summary');
+    const row = document.getElementById('alertRow');
+    let html = '';
+    if (stuck.count > 0) html += `<div class="alert-badge stuck-alert pulse"><i class="bi bi-exclamation-triangle-fill"></i> ${stuck.count} parcels stuck in transit 2+ days</div>`;
+    if (unpaid.count > 0) html += `<div class="alert-badge unpaid-alert"><i class="bi bi-cash"></i> ${unpaid.count} unpaid (${kes(unpaid.totalAmount)})</div>`;
+    document.getElementById('stuckAlert').parentElement.innerHTML = html ? html.split('</div>')[0] + '</div>' : '';
+    document.getElementById('unpaidAlert').parentElement.innerHTML = html.includes('unpaid') ? html.split('unpaid')[0].includes('</div>') ? '<div class="col-auto"><div class="alert-badge unpaid-alert"><i class="bi bi-cash"></i> ' + unpaid.count + ' unpaid ('+kes(unpaid.totalAmount)+')</div></div>' : '' : '';
+    row.style.display = html ? '' : 'none';
+  } catch(e) { console.error('alerts', e); }
+}
+
+// ── Journey ──
+async function loadJourney() {
+  try {
+    const d = await API.get('comparative-summary');
+    const t = d.today;
+    document.getElementById('jPending').textContent = t.parcels - t.inTransit - t.awaiting - t.collected;
+    document.getElementById('jTransit').textContent = t.inTransit;
+    document.getElementById('jReceived').textContent = t.awaiting;
+    document.getElementById('jCollected').textContent = t.collected;
+  } catch(e) { console.error('journey', e); }
+}
+
+// ── Top senders/receivers ──
+async function loadLeaderboard() {
+  try {
+    const d = await API.get('parcels-by-status');
+    // We'll use revenue-by-location as a proxy; real leaderboard needs sender/receiver grouping endpoint
+    const byLoc = await API.get('revenue-by-location');
+    document.getElementById('topSenders').innerHTML = byLoc.slice(0,5).map((x,i) =>
+      `<div class="leaderboard-item"><span class="leaderboard-rank ${i<3?['top','silver','bronze'][i]:''}">${i+1}</span><span class="flex-grow-1">${x.location}</span><strong>${x.count}</strong><small class="text-muted ms-1">parcels</small></div>`
+    ).join('') || '<small class="text-muted">No data</small>';
+    document.getElementById('topReceivers').innerHTML = byLoc.slice(0,5).map((x,i) =>
+      `<div class="leaderboard-item"><span class="leaderboard-rank ${i<3?['top','silver','bronze'][i]:''}">${i+1}</span><span class="flex-grow-1">${x.location}</span><strong>${x.count}</strong><small class="text-muted ms-1">parcels</small></div>`
+    ).join('') || '<small class="text-muted">No data</small>';
+  } catch(e) { console.error('leaderboard', e); }
+}
+
+// ── Statistics ──
+function animateNumber(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (typeof val === 'number' && !isNaN(val)) {
+    const cur = parseInt(el.textContent?.replace(/\D/g,'')) || 0;
+    const dur = 400, steps = 15; let i = 0;
+    const t = setInterval(() => { i++; el.textContent = Math.round(cur + (val - cur) * (i/steps)).toLocaleString(); if (i >= steps) { clearInterval(t); el.textContent = val.toLocaleString(); } }, dur/steps);
+  } else {
+    el.textContent = typeof val === 'number' ? val.toLocaleString() : val;
+  }
+}
+function k2(num) { if (num == null) return '--'; const n = Number(num); return n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n.toLocaleString(); }
+
+// ── Chart: Revenue by Location ──
+async function loadRevenueByLocation() {
+  showLoading('lRevLoc');
+  try {
+    const d = await API.get('revenue-by-location');
+    if (!d || !d.length) { hideLoading('lRevLoc'); return; }
+    destroyChart('chartRevLocation');
+    const ctx = document.getElementById('chartRevLocation').getContext('2d');
+    const t = chartTheme();
+    charts.chartRevLocation = new Chart(ctx, { type: 'bar', data: {
+      labels: d.map(x => x.location), datasets: [{ label: 'Revenue', data: d.map(x => x.revenue), backgroundColor: d.map((_,i) => colors[i%colors.length]+'CC'), borderRadius: 8 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => kes(c.raw) + ' | ' + d[c.dataIndex].count + ' parcels' } } },
+        scales: { x: { grid: { color: t.gridColor }, ticks: { color: t.color, callback: v => k2(v) } }, y: { grid: { display: false }, ticks: { color: t.color } } },
+        onClick: (_, el) => { if (el.length) { const i = el[0].index; showDrill('Revenue from ' + d[i].location, [{label:'Revenue',value:kes(d[i].revenue)},{label:'Parcels',value:d[i].count}]); } }
+      }
+    });
+  } catch(e) { document.getElementById('lRevLoc')?.classList.add('d-none'); }
+  hideLoading('lRevLoc');
+}
+
+async function loadRevenueByVehicle() {
+  showLoading('lRevVeh');
+  try {
+    const d = await API.get('revenue-by-vehicle');
+    destroyChart('chartRevVehicle');
+    const ctx = document.getElementById('chartRevVehicle').getContext('2d');
+    const t = chartTheme();
+    charts.chartRevVehicle = new Chart(ctx, { type: 'bar', data: {
+      labels: d.map(x => x.vehicle), datasets: [{ label: 'Revenue', data: d.map(x => x.revenue), backgroundColor: d.map((_,i) => colors[i%colors.length]+'BB'), borderRadius: 8 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => kes(c.raw) + ' | ' + d[c.dataIndex].count + ' parcels' } } },
+        scales: { x: { grid: { color: t.gridColor }, ticks: { color: t.color, callback: v => k2(v) } }, y: { grid: { display: false }, ticks: { color: t.color } } }
+      }
+    });
+  } catch(e) { console.error('rev-veh', e); }
+  hideLoading('lRevVeh');
+}
+
+async function loadDailyRevenue() {
+  showLoading('lDaily');
+  try {
+    const d = await API.get('daily-revenue');
+    destroyChart('chartDailyRev');
+    const ctx = document.getElementById('chartDailyRev').getContext('2d');
+    const t = chartTheme();
+    // 7-day moving average
+    const ma = [];
+    for (let i = 0; i < d.length; i++) {
+      const slice = d.slice(Math.max(0,i-6), i+1);
+      ma.push(Math.round(slice.reduce((s,x)=>s+x.revenue,0) / slice.length));
+    }
+    charts.chartDailyRev = new Chart(ctx, { type: 'bar', data: {
+      labels: d.map(x => x.date),
+      datasets: [
+        { label: 'Parcels', data: d.map(x => x.parcels), backgroundColor: '#4e73df99', borderRadius: 6, yAxisID: 'y' },
+        { label: 'Revenue', data: d.map(x => x.revenue), borderColor: '#1cc88a', backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.4, type: 'line', yAxisID: 'y1' },
+        { label: '7d Avg Revenue', data: ma, borderColor: '#f6c23e', borderDash: [5,5], backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, type: 'line', yAxisID: 'y1', pointRadius: 0 }
+      ] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { tooltip: { callbacks: { label: c => c.dataset.label.includes('Parcels') ? c.raw + ' parcels' : kes(c.raw) } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: t.color, maxTicksLimit: 10 } },
+          y: { type: 'linear', position: 'left', title: { display: true, text: 'Parcels', color: '#4e73df' }, grid: { color: t.gridColor }, ticks: { color: '#4e73df', precision: 0 }, beginAtZero: true },
+          y1: { type: 'linear', position: 'right', title: { display: true, text: 'Revenue', color: '#1cc88a' }, grid: { display: false }, ticks: { color: '#1cc88a', callback: v => k2(v) }, beginAtZero: true }
+        }
+      }
+    });
+  } catch(e) { document.getElementById('lDaily')?.classList.add('d-none'); }
+  hideLoading('lDaily');
+}
+
+async function loadParcelsByStatus() {
+  showLoading('lStatus');
+  try {
+    const d = await API.get('parcels-by-status');
+    destroyChart('chartPieStatus');
+    const ctx = document.getElementById('chartPieStatus').getContext('2d');
+    charts.chartPieStatus = new Chart(ctx, { type: 'doughnut', data: {
+      labels: d.map(x => x.status), datasets: [{ data: d.map(x => x.count), backgroundColor: colors, borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } } }
+    });
+  } catch(e) { console.error('status', e); }
+  hideLoading('lStatus');
+}
+
+async function loadPaymentMethods() {
+  showLoading('lPay');
+  try {
+    const d = await API.get('payment-methods');
+    destroyChart('chartPiePayment');
+    const ctx = document.getElementById('chartPiePayment').getContext('2d');
+    charts.chartPiePayment = new Chart(ctx, { type: 'doughnut', data: {
+      labels: d.map(x => x.method), datasets: [{ data: d.map(x => x.count), backgroundColor: ['#1cc88a','#4e73df','#f6c23e','#e74a3b'], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } } }
+    });
+  } catch(e) { console.error('payment', e); }
+  hideLoading('lPay');
+}
+
+async function loadPaidVsUnpaid() {
+  showLoading('lPaid');
+  try {
+    const d = await API.get('paid-vs-unpaid');
+    destroyChart('chartDoughnutPaid');
+    const ctx = document.getElementById('chartDoughnutPaid').getContext('2d');
+    charts.chartDoughnutPaid = new Chart(ctx, { type: 'doughnut', data: {
+      labels: d.map(x => x.paid ? 'Paid' : 'Unpaid'), datasets: [{ data: d.map(x => x.count), backgroundColor: ['#1cc88a','#e74a3b'], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } } }
+    });
+  } catch(e) { console.error('paid', e); }
+  hideLoading('lPaid');
+}
+
+async function loadBatches() {
+  showLoading('lBatch');
+  try {
+    const d = await API.get('batches-by-status');
+    destroyChart('chartDoughnutBatch');
+    const ctx = document.getElementById('chartDoughnutBatch').getContext('2d');
+    charts.chartDoughnutBatch = new Chart(ctx, { type: 'doughnut', data: {
+      labels: d.map(x => x.status), datasets: [{ data: d.map(x => x.count), backgroundColor: colors, borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } } }
+    });
+  } catch(e) { console.error('batches', e); }
+  hideLoading('lBatch');
+}
+
+// ── Drill modal ──
+function showDrill(title, items) {
+  document.getElementById('drillTitle').textContent = title;
+  document.getElementById('drillBody').innerHTML = items.map(x => `<div class="d-flex justify-content-between py-2 border-bottom"><span>${x.label}</span><strong>${x.value}</strong></div>`).join('');
+  new bootstrap.Modal(document.getElementById('drillModal')).show();
+}
+
+// ── Export PDF ──
+function exportPDF() { window.print(); }
+
+// ── Theme & refresh ──
+function toggleTheme() { const h = document.documentElement; h.dataset.bsTheme = h.dataset.bsTheme === 'dark' ? 'light' : 'dark'; Object.values(charts).forEach(c => c.destroy()); refreshAll(); }
+
+async function loadClients() {
+  try {
+    const data = await API.get('clients');
+    if (!API.getClientId() && data.length > 0) API.setClientId(data[0].clientCode);
+  } catch(e) { console.error('clients', e); }
+}
+
+function defaultDates() {
+  const today = new Date().toISOString().split('T')[0];
+  const df = document.getElementById('dateFrom');
+  const dt = document.getElementById('dateTo');
+  if (df && !df.value) df.value = today;
+  if (dt && !dt.value) dt.value = today;
+}
+
+async function refreshAll() {
+  await Promise.all([
+    loadComparativeSummary(), loadAlerts(), loadAnalytics(), loadJourney(),
+    loadRevenueByLocation(), loadRevenueByVehicle(),
+    loadDailyRevenue(), loadParcelsByStatus(), loadPaymentMethods(),
+    loadPaidVsUnpaid(), loadBatches(), loadLeaderboard()
+  ]);
+}
+
+// ── Init ──
+defaultDates();
+loadClients().then(() => refreshAll());
+
+// Auto-refresh every 60s
+setInterval(refreshAll, 60000);
+</script>
+</body>
+</html>

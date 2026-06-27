@@ -22,8 +22,10 @@ namespace ParcelAPI.Filters
         {
             var path = context.HttpContext.Request.Path.Value ?? "";
             // Safaricom callbacks and C2B confirmations do not send X-Client-Identifier
+            // Dashboard clients list is needed before a client is selected
             if (path.EndsWith("/callback", StringComparison.OrdinalIgnoreCase) ||
-                path.EndsWith("/c2b", StringComparison.OrdinalIgnoreCase))
+                path.EndsWith("/c2b", StringComparison.OrdinalIgnoreCase) ||
+                path.Contains("/dashboard/clients", StringComparison.OrdinalIgnoreCase))
             {
                 await next();
                 return;

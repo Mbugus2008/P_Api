@@ -70,6 +70,8 @@ namespace Loc
         
         private string nameField;
         
+        private string phone_NoField;
+        
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
         public string Key
@@ -109,6 +111,20 @@ namespace Loc
             set
             {
                 this.nameField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public string Phone_No
+        {
+            get
+            {
+                return this.phone_NoField;
+            }
+            set
+            {
+                this.phone_NoField = value;
             }
         }
     }
@@ -164,6 +180,9 @@ namespace Loc
         
         /// <remarks/>
         Name,
+        
+        /// <remarks/>
+        Phone_No,
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]

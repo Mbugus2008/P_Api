@@ -4,6 +4,7 @@ public class SmsRequest
 {
     public string Phone { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
+    public string? DocumentNo { get; set; }
 }
 
 public class SmsBulkRequest

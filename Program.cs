@@ -121,6 +121,7 @@ if (System.IO.Directory.Exists(parcelAppPath))
 app.UseCors("AllowAll");
 
 // Add custom middleware for client identification
+app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<ClientIdentificationMiddleware>();
 
 app.UseAuthorization();

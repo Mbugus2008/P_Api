@@ -42,10 +42,10 @@ public class NavSmsService
             {
                 // NAV SendSms expects: source, telephone, textsms, documentNo, dates
                 await navClient.SendsmsAsync(
-                    source: "TRIMLINE",
+                    source: "PARCEL",
                     telephone: msg.Phone,
                     textsms: msg.Message,
-                    documentNo: "",
+                    documentNo: msg.DocumentNo ?? "",
                     dates: DateTime.Now
                 );
                 result.Success = true;

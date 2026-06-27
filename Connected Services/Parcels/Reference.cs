@@ -204,6 +204,14 @@ namespace Parcels
         
         private bool parcel_ValueFieldSpecified;
         
+        private System.DateTime payment_DateField;
+        
+        private bool payment_DateFieldSpecified;
+        
+        private System.DateTime payment_TimeField;
+        
+        private bool payment_TimeFieldSpecified;
+        
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
         public string Key
@@ -903,6 +911,62 @@ namespace Parcels
                 this.parcel_ValueFieldSpecified = value;
             }
         }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(DataType="date", Order=36)]
+        public System.DateTime Payment_Date
+        {
+            get
+            {
+                return this.payment_DateField;
+            }
+            set
+            {
+                this.payment_DateField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool Payment_DateSpecified
+        {
+            get
+            {
+                return this.payment_DateFieldSpecified;
+            }
+            set
+            {
+                this.payment_DateFieldSpecified = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(DataType="time", Order=37)]
+        public System.DateTime Payment_Time
+        {
+            get
+            {
+                return this.payment_TimeField;
+            }
+            set
+            {
+                this.payment_TimeField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool Payment_TimeSpecified
+        {
+            get
+            {
+                return this.payment_TimeFieldSpecified;
+            }
+            set
+            {
+                this.payment_TimeFieldSpecified = value;
+            }
+        }
     }
     
     /// <remarks/>
@@ -1103,6 +1167,12 @@ namespace Parcels
         
         /// <remarks/>
         Parcel_Value,
+        
+        /// <remarks/>
+        Payment_Date,
+        
+        /// <remarks/>
+        Payment_Time,
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]

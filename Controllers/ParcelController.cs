@@ -146,10 +146,18 @@ namespace ParcelAPI.Controllers
         }
 
         [HttpPost("nav/parcels/create")]
-        public async Task<ActionResult<Results<Parcels.Parcel>>> CreateNavParcel([FromBody] Parcels.Parcel parcel)
+        public async Task<ActionResult<Results<Parcels.Parcel>>> CreateNavParcel()
         {
             try
             {
+                // Manually deserialize since WCF-generated class doesn't work with System.Text.Json
+                using var reader = new StreamReader(Request.Body);
+                var raw = await reader.ReadToEndAsync();
+                var parcel = ParseParcelFromJson(raw);
+
+                if (parcel == null || string.IsNullOrEmpty(parcel.Document_No))
+                    return BadRequest(new Results<Parcels.Parcel> { Code = -1, Desc = "Invalid parcel data. Document_No is required." });
+
                 if (Client.NavParcelService == null)
                     return BadRequest(new Results<Parcels.Parcel> { Code = -1, Desc = "NAV Parcel Service not available" });
 
@@ -159,6 +167,23 @@ namespace ParcelAPI.Controllers
                     parcel.Document_No, parcel.App_Version ?? "(null)");
 
                 var createdParcel = await Client.NavParcelService.CreateParcelAsync(parcel);
+
+                // Verify the parcel was actually persisted by reading it back
+                var docNo = createdParcel.Document_No ?? parcel.Document_No;
+                if (!string.IsNullOrEmpty(docNo))
+                {
+                    var verified = await Client.NavParcelService.ReadParcelAsync(docNo);
+                    if (verified == null)
+                    {
+                        _logger.LogWarning("CreateNavParcel: Parcel {DocNo} not found after create — BC may have rejected it", docNo);
+                        return StatusCode(500, new Results<Parcels.Parcel>
+                        {
+                            Code = -1,
+                            Desc = $"Parcel {docNo} was not persisted in BC. Please retry."
+                        });
+                    }
+                }
+
                 return Ok(new Results<Parcels.Parcel> { Code = 0, Desc = $"Parcel created: {createdParcel.Document_No}", Contents = createdParcel });
             }
             catch (Exception ex)
@@ -170,10 +195,17 @@ namespace ParcelAPI.Controllers
 
         [HttpPut("nav/parcels/update")]
         [HttpPost("nav/parcels/update")]
-        public async Task<ActionResult<Results<Parcels.Parcel>>> UpdateNavParcel([FromBody] Parcels.Parcel parcel)
+        public async Task<ActionResult<Results<Parcels.Parcel>>> UpdateNavParcel()
         {
             try
             {
+                using var reader = new StreamReader(Request.Body);
+                var raw = await reader.ReadToEndAsync();
+                var parcel = ParseParcelFromJson(raw);
+
+                if (parcel == null || string.IsNullOrEmpty(parcel.Document_No))
+                    return BadRequest(new Results<Parcels.Parcel> { Code = -1, Desc = "Invalid parcel data" });
+
                 if (Client.NavParcelService == null)
                     return BadRequest(new Results<Parcels.Parcel> { Code = -1, Desc = "NAV Parcel Service not available" });
 
@@ -193,9 +225,9 @@ namespace ParcelAPI.Controllers
         }
 
         [HttpPost("nav/parcels/update-post")]
-        public Task<ActionResult<Results<Parcels.Parcel>>> UpdateNavParcelPost([FromBody] Parcels.Parcel parcel)
+        public Task<ActionResult<Results<Parcels.Parcel>>> UpdateNavParcelPost()
         {
-            return UpdateNavParcel(parcel);
+            return UpdateNavParcel();
         }
 
         [HttpDelete("nav/parcels/{key}")]
@@ -611,6 +643,78 @@ namespace ParcelAPI.Controllers
             return value > DateTime.MinValue;
         }
 
+        private static Parcels.Parcel ParseParcelFromJson(string json)
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var parcel = new Parcels.Parcel();
+
+            if (root.TryGetProperty("Document_No", out var v)) parcel.Document_No = v.GetString();
+            if (root.TryGetProperty("Batch_No", out v)) parcel.Batch_No = v.GetString();
+            if (root.TryGetProperty("Date_sent", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Date_sent = v.GetDateTime();
+            if (root.TryGetProperty("Sender_Name", out v)) parcel.Sender_Name = v.GetString();
+            if (root.TryGetProperty("Sender_ID", out v)) parcel.Sender_ID = v.GetString();
+            if (root.TryGetProperty("Sender_Phone", out v)) parcel.Sender_Phone = v.GetString();
+            if (root.TryGetProperty("From", out v)) parcel.From = v.GetString();
+            if (root.TryGetProperty("To", out v)) parcel.To = v.GetString();
+            if (root.TryGetProperty("Receiver_Name", out v)) parcel.Receiver_Name = v.GetString();
+            if (root.TryGetProperty("Receiver_ID", out v)) parcel.Receiver_ID = v.GetString();
+            if (root.TryGetProperty("Receiver_Phone", out v)) parcel.Receiver_Phone = v.GetString();
+            if (root.TryGetProperty("Status", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Status = (Parcels.Status)v.GetInt32();
+            if (root.TryGetProperty("Driver", out v)) parcel.Driver = v.GetString();
+            if (root.TryGetProperty("Vehicle", out v)) parcel.Vehicle = v.GetString();
+            if (root.TryGetProperty("Who_to_Pay", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Who_to_Pay = (Parcels.Who_to_Pay)v.GetInt32();
+            if (root.TryGetProperty("Amount_Paid", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Amount_Paid = v.GetDecimal();
+            if (root.TryGetProperty("Paid", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Paid = v.GetBoolean();
+            if (root.TryGetProperty("Payment_Method", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+            {
+                if (v.ValueKind == System.Text.Json.JsonValueKind.Number)
+                    parcel.Payment_Method = (Parcels.Payment_Method)v.GetInt32();
+                else
+                    parcel.Payment_Method = v.GetString() switch
+                    {
+                        "Cash" or "cash" => Parcels.Payment_Method.Cash,
+                        "MPesa" or "Mpesa" or "M_Pesa" or "mpesa" or "M-Pesa" => Parcels.Payment_Method.MPesa,
+                        _ => Parcels.Payment_Method.Pending
+                    };
+            }
+            if (root.TryGetProperty("Mpesa_Code", out v)) parcel.Mpesa_Code = v.GetString();
+            if (root.TryGetProperty("Date_Collected", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Date_Collected = v.GetDateTime();
+            if (root.TryGetProperty("Date_Delivered", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Date_Delivered = v.GetDateTime();
+            if (root.TryGetProperty("deviceId", out v)) parcel.deviceId = v.GetString();
+            if (root.TryGetProperty("Payment_Received_By", out v)) parcel.Payment_Received_By = v.GetString();
+            if (root.TryGetProperty("Created_By", out v)) parcel.Created_By = v.GetString();
+            if (root.TryGetProperty("Received_By_ID", out v)) parcel.Received_By_ID = v.GetString();
+            if (root.TryGetProperty("Received_By_Phone", out v)) parcel.Received_By_Phone = v.GetString();
+            if (root.TryGetProperty("Receiver_Code", out v)) parcel.Receiver_Code = v.GetString();
+            if (root.TryGetProperty("App_Version", out v)) parcel.App_Version = v.GetString();
+            if (root.TryGetProperty("Parcel_Value", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Parcel_Value = v.GetDecimal();
+            if (root.TryGetProperty("Payment_Date", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Payment_Date = v.GetDateTime();
+            if (root.TryGetProperty("Payment_Time", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Payment_Time = v.GetDateTime();
+            if (root.TryGetProperty("Date_Created", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Date_Created = v.GetDateTime();
+            if (root.TryGetProperty("Time_Created", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Time_Created = v.GetDateTime();
+            if (root.TryGetProperty("Time_Sent", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Time_Sent = v.GetDateTime();
+            if (root.TryGetProperty("Time_Collected", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Time_Collected = v.GetDateTime();
+            if (root.TryGetProperty("Time_Delivered", out v) && v.ValueKind != System.Text.Json.JsonValueKind.Null)
+                parcel.Time_Delivered = v.GetDateTime();
+
+            return parcel;
+        }
+
         private static void ApplyParcelSpecifiedFlags(Parcels.Parcel parcel)
         {
             parcel.Date_sentSpecified = HasDateValue(parcel.Date_sent);
@@ -627,6 +731,8 @@ namespace ParcelAPI.Controllers
             parcel.Time_DeliveredSpecified = HasDateValue(parcel.Time_Delivered);
             parcel.Payment_MethodSpecified = true;
             parcel.Parcel_ValueSpecified = true;
+            parcel.Payment_DateSpecified = HasDateValue(parcel.Payment_Date);
+            parcel.Payment_TimeSpecified = HasDateValue(parcel.Payment_Time);
         }
 
         private static void ApplyBatchSpecifiedFlags(NavBatches.ParcelBatches batch)
@@ -829,7 +935,7 @@ namespace ParcelAPI.Controllers
             try
             {
                 var result = await _smsService.SendBulkAsync(
-                    new List<ParcelAPI.Models.SmsRequest> { new() { Phone = request.Phone, Message = request.Message } },
+                    new List<ParcelAPI.Models.SmsRequest> { new() { Phone = request.Phone, Message = request.Message, DocumentNo = request.DocumentNo } },
                     ClientId);
                 return Ok(result);
             }
@@ -848,7 +954,8 @@ namespace ParcelAPI.Controllers
                 var messages = request.Messages.Select(m => new ParcelAPI.Models.SmsRequest
                 {
                     Phone = m.Phone,
-                    Message = m.Message
+                    Message = m.Message,
+                    DocumentNo = m.DocumentNo
                 }).ToList();
                 var result = await _smsService.SendBulkAsync(messages, ClientId);
                 return Ok(result);
@@ -872,6 +979,7 @@ namespace ParcelAPI.Controllers
     {
         public string Phone { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+        public string? DocumentNo { get; set; }
     }
 
     public class SmsSendBulkRequest
