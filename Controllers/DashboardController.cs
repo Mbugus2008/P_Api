@@ -41,6 +41,31 @@ namespace ParcelAPI.Controllers
             }
         }
 
+        /// <summary>List all locations with Code and Name</summary>
+        [HttpGet("locations")]
+        [ServiceFilter(typeof(ClientIdentifierFilter))]
+        public async Task<ActionResult<Results<object[]>>> GetLocations()
+        {
+            try
+            {
+                var client = GetClient();
+                if (client.NavLocationService == null)
+                    return Ok(new Results<object[]> { Code = 0, Contents = Array.Empty<object>() });
+
+                var locations = await client.NavLocationService.ReadMultipleLocationsAsync(null, 0);
+                var result = locations
+                    .Select(l => new { code = l.Code, name = l.Name })
+                    .ToArray();
+
+                return Ok(new Results<object[]> { Code = 0, Contents = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading locations");
+                return StatusCode(500, Err(ex.Message));
+            }
+        }
+
         private async Task<Parcels.Parcel[]> GetParcelsAsync(DateTime? from = null, DateTime? to = null)
         {
             var client = GetClient();
@@ -74,10 +99,11 @@ namespace ParcelAPI.Controllers
                 var parcels = await GetParcelsAsync(from, to);
                 var allParcels = await GetParcelsAsync(); // all-time, no date filter
                 var today = DateTime.Today;
-                var totalRevenue = parcels.Sum(p => p.Parcel_Value);
+                var totalRevenue = parcels.Sum(p => p.Amount_Paid);
                 var paidAmount = parcels.Where(p => p.Paid == true).Sum(p => p.Amount_Paid);
-                var allTotalRevenue = allParcels.Sum(p => p.Parcel_Value);
-                var allPaid = allParcels.Where(p => p.Paid == true).Sum(p => p.Amount_Paid);
+                var previousDaysParcels = allParcels.Where(p => p.Date_sent.Date < today).ToArray();
+                var allTotal = previousDaysParcels.Sum(p => p.Amount_Paid);
+                var allPaid = previousDaysParcels.Where(p => p.Paid == true).Sum(p => p.Amount_Paid);
 
                 return Ok(new Results<object>
                 {
@@ -88,7 +114,7 @@ namespace ParcelAPI.Controllers
                         totalRevenue = totalRevenue,
                         paidAmount = paidAmount,
                         unpaidAmount = totalRevenue - paidAmount,
-                        totalOutstanding = allTotalRevenue - allPaid,
+                        totalOutstanding = allTotal - allPaid,
                         previousDaysPaidToday = parcels
                             .Where(p => p.Paid == true
                                 && p.Date_sent.Date < today
@@ -227,20 +253,89 @@ namespace ParcelAPI.Controllers
         {
             try
             {
+                var today = DateTime.Today;
+
+                // Main list: filtered by Date_sent (from/to) — used for In Transit, Waiting Collection
                 var parcels = await GetParcelsAsync(from, to);
+
+                // All parcels (unfiltered) — used for collected and previous uncollected
+                var allParcels = await GetParcelsAsync();
 
                 var grouped = parcels
                     .GroupBy(p => new { Location = p.To ?? "Unknown", Status = p.Status.ToString() })
+                    .Where(g => g.Key.Status != "Collected") // exclude — we replace below
                     .Select(g => new { location = g.Key.Location, status = g.Key.Status, count = g.Count() })
+                    .ToList();
+
+                // Collected Today: sent today AND collected today
+                var collectedToday = allParcels
+                    .Where(p => p.Status == Parcels.Status.Collected && p.Date_Collected.Date == today && p.Date_sent.Date == today)
+                    .GroupBy(p => p.To ?? "Unknown")
+                    .Select(g => new { location = g.Key, status = "Collected_Today", count = g.Count() })
+                    .Where(x => x.count > 0)
+                    .ToList();
+                grouped.AddRange(collectedToday);
+
+                // Prev Collected: sent before today but collected today
+                var prevCollected = allParcels
+                    .Where(p => p.Status == Parcels.Status.Collected && p.Date_Collected.Date == today && p.Date_sent.Date < today)
+                    .GroupBy(p => p.To ?? "Unknown")
+                    .Select(g => new { location = g.Key, status = "Prev_Collected", count = g.Count() })
+                    .Where(x => x.count > 0)
+                    .ToList();
+                grouped.AddRange(prevCollected);
+
+                // Previous uncollected: Waiting_Collection with Date_sent before today (unfiltered)
+                var prevUncollected = allParcels
+                    .Where(p => p.Status == Parcels.Status.Waiting_Collection && p.Date_sent.Date < today)
+                    .GroupBy(p => p.To ?? "Unknown")
+                    .Select(g => new { location = g.Key, status = "Previous_Uncollected", count = g.Count() })
+                    .Where(x => x.count > 0)
+                    .ToList();
+                grouped.AddRange(prevUncollected);
+
+                var result = grouped
                     .OrderBy(x => x.location)
                     .ThenBy(x => x.status)
+                    .ToArray();
+
+                return Ok(new Results<object[]> { Code = 0, Contents = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting parcels by location status");
+                return StatusCode(500, Err(ex.Message));
+            }
+        }
+
+        /// <summary>Received (awaiting collection) parcels grouped by Date_sent, latest first</summary>
+        [HttpGet("received-by-date")]
+        [ServiceFilter(typeof(ClientIdentifierFilter))]
+        public async Task<ActionResult<Results<object[]>>> GetReceivedByDate([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
+        {
+            try
+            {
+                var parcels = await GetParcelsAsync(from, to);
+
+                var grouped = parcels
+                    .Where(p => p.Status == Parcels.Status.Waiting_Collection)
+                    .GroupBy(p => p.Date_sent.Date)
+                    .Select(g => new
+                    {
+                        date = g.Key.ToString("yyyy-MM-dd"),
+                        total = g.Count(),
+                        paid = g.Count(p => p.Paid == true),
+                        cash = g.Where(p => p.Paid == true && p.Payment_Method == Parcels.Payment_Method.Cash).Sum(p => p.Amount_Paid),
+                        mpesa = g.Where(p => p.Paid == true && p.Payment_Method == Parcels.Payment_Method.MPesa).Sum(p => p.Amount_Paid),
+                    })
+                    .OrderByDescending(x => x.date)
                     .ToArray();
 
                 return Ok(new Results<object[]> { Code = 0, Contents = grouped });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting parcels by location status");
+                _logger.LogError(ex, "Error getting received by date");
                 return StatusCode(500, Err(ex.Message));
             }
         }

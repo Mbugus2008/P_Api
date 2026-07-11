@@ -1,2 +1,161 @@
 <!DOCTYPE html>
-<html><head><meta http-equiv="refresh" content="0;url=dashboard.html"></head><body></body></html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parcel — Smart Parcel Management for SACCOs & Couriers</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{font-family:'Inter',sans-serif;color:#1a1a2e;overflow-x:hidden}
+.hero{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:100px 0 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-20%;width:500px;height:500px;background:rgba(255,255,255,0.04);border-radius:50%}
+.hero h1{font-size:3rem;font-weight:900;letter-spacing:-1px}
+.hero .lead{font-size:1.2rem;opacity:0.9}
+.badge-pill{padding:8px 20px;border-radius:50px;font-weight:600}
+.feature-icon{width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+.pricing-card{border-radius:20px;transition:transform .3s}
+.pricing-card:hover{transform:translateY(-5px)}
+.pricing-card.featured{border:2px solid #667eea;box-shadow:0 20px 60px rgba(102,126,234,0.2)}
+.cta{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+footer{background:#0a0b10;color:#888;font-size:0.85rem}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero text-center">
+  <div class="container">
+    <span class="badge bg-white text-primary mb-3 badge-pill">&#x1F680; Trusted by 30+ SACCOs</span>
+    <h1 class="mb-3">Parcel Management<br>Made Simple</h1>
+    <p class="lead mb-4 mx-auto" style="max-width:600px">
+      One app to create, track, collect, and get paid for parcels. M-Pesa integration, real-time SMS alerts, and a live dashboard.
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="https://wa.me/254710563359" class="btn btn-light btn-lg px-4 fw-bold rounded-pill">
+        <i class="bi bi-whatsapp me-2"></i>Try Free
+      </a>
+      <a href="dashboard.html?client=DEMO" class="btn btn-outline-light btn-lg px-4 rounded-pill">
+        <i class="bi bi-bar-chart me-2"></i>Live Demo
+      </a>
+    </div>
+    <div class="mt-5 mx-auto" style="max-width:720px">
+      <div class="ratio ratio-16x9 rounded-4 overflow-hidden shadow-lg">
+        <video controls poster="demo-thumb.jpg" style="background:#1a1a2e">
+          <source src="demo.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="text-center mt-3">
+        <span class="badge bg-primary fs-6 px-3 py-2">KES 20 / parcel</span>
+        <span class="ms-2 text-white opacity-75 small">WhatsApp 0710 563 359</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="py-4 bg-white border-bottom">
+  <div class="container">
+    <div class="row text-center g-3">
+      <div class="col-4"><div class="fw-bold fs-3 text-primary">30+</div><small class="text-muted">Active SACCOs</small></div>
+      <div class="col-4"><div class="fw-bold fs-3 text-success">50K+</div><small class="text-muted">Parcels/Month</small></div>
+      <div class="col-4"><div class="fw-bold fs-3 text-warning">99.9%</div><small class="text-muted">Uptime</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="py-5">
+  <div class="container">
+    <h2 class="text-center fw-bold mb-5">Everything you need</h2>
+    <div class="row g-4">
+      <div class="col-md-4 text-center p-4">
+        <div class="feature-icon bg-success bg-opacity-10 text-success mx-auto mb-3"><i class="bi bi-phone"></i></div>
+        <h5>M-Pesa Payments</h5>
+        <p class="text-muted small">Collect payments instantly via M-Pesa STK push, QR code, or cash. Track who paid and who hasn't.</p>
+      </div>
+      <div class="col-md-4 text-center p-4">
+        <div class="feature-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3"><i class="bi bi-chat-dots"></i></div>
+        <h5>SMS Notifications</h5>
+        <p class="text-muted small">Auto-send collection codes and delivery alerts to receivers. Keep customers informed in real-time.</p>
+      </div>
+      <div class="col-md-4 text-center p-4">
+        <div class="feature-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3"><i class="bi bi-graph-up"></i></div>
+        <h5>Live Dashboard</h5>
+        <p class="text-muted small">Revenue breakdown, location analytics, parcel pipeline — all in one beautiful real-time dashboard.</p>
+      </div>
+      <div class="col-md-4 text-center p-4">
+        <div class="feature-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3"><i class="bi bi-receipt"></i></div>
+        <h5>Thermal Receipts</h5>
+        <p class="text-muted small">Print professional receipts via Bluetooth thermal printers. Receipts with QR codes and barcodes.</p>
+      </div>
+      <div class="col-md-4 text-center p-4">
+        <div class="feature-icon bg-info bg-opacity-10 text-info mx-auto mb-3"><i class="bi bi-truck"></i></div>
+        <h5>Batch Dispatch</h5>
+        <p class="text-muted small">Group parcels into batches, assign vehicles and drivers, track from dispatch to delivery.</p>
+      </div>
+      <div class="col-md-4 text-center p-4">
+        <div class="feature-icon bg-secondary bg-opacity-10 text-secondary mx-auto mb-3"><i class="bi bi-shield-check"></i></div>
+        <h5>Collection Codes</h5>
+        <p class="text-muted small">OTP-based collection. Receiver shows code to collect — no wrong pickups, full accountability.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <h2 class="text-center fw-bold mb-3">Simple Pricing</h2>
+    <p class="text-center text-muted mb-5">Pay only for what you send. No monthly fees.</p>
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card pricing-card featured p-5 text-center">
+          <span class="badge bg-primary mb-2">Flat Rate</span>
+          <div class="fs-1 fw-black text-primary my-3">KES 20<small class="fs-6 fw-normal text-muted"> / parcel</small></div>
+          <p class="text-muted">Charged per parcel dispatched. Everything included — no hidden costs.</p>
+          <ul class="list-unstyled text-start small mt-3">
+            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Unlimited parcels</li>
+            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>M-Pesa & Cash payments</li>
+            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>SMS notifications</li>
+            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Thermal receipts</li>
+            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Live dashboard</li>
+            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Batch dispatch</li>
+            <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Unlimited locations</li>
+          </ul>
+          <a href="https://wa.me/254710563359" class="btn btn-primary rounded-pill mt-4 px-5">Start Free Trial</a>
+          <p class="text-muted small mt-2">14-day free trial. No credit card.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta py-5 text-center">
+  <div class="container">
+    <h2 class="fw-bold mb-3">Ready to streamline your parcel operations?</h2>
+    <p class="mb-4 opacity-75">Join 30+ SACCOs already using Parcel. Free 14-day trial, no credit card needed.</p>
+    <div class="d-flex gap-3 justify-content-center">
+      <a href="https://wa.me/254710563359" class="btn btn-light btn-lg px-5 rounded-pill fw-bold">
+        <i class="bi bi-whatsapp me-2"></i>WhatsApp Us
+      </a>
+      <a href="dashboard.html?client=DEMO" class="btn btn-outline-light btn-lg px-5 rounded-pill">
+        <i class="bi bi-play-circle me-2"></i>View Demo
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-4">
+  <div class="container text-center">
+    <p class="mb-1">© 2026 Trimline. All rights reserved.</p>
+    <p>Parcel Management System — Built for Kenyan SACCOs & Courier Services</p>
+  </div>
+</footer>
+
+</body>
+</html>

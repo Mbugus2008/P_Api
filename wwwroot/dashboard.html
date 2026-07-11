@@ -30,6 +30,11 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 .stat-card.batches{border-left-color:#f6c23e}
 .stat-card.collected{border-left-color:#36b9cc}
 .stat-number{font-size:1.8rem;font-weight:800;letter-spacing:-0.5px}
+.stat-card.loading .stat-number{color:transparent;background:linear-gradient(90deg,rgba(0,0,0,0.06) 25%,rgba(0,0,0,0.1) 50%,rgba(0,0,0,0.06) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;width:fit-content;min-width:60px}
+[data-bs-theme="dark"] .stat-card.loading .stat-number{background:linear-gradient(90deg,rgba(255,255,255,0.06) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.06) 75%);background-size:200% 100%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.stat-card.collected{border-left-color:#36b9cc}
+.stat-number{font-size:1.8rem;font-weight:800;letter-spacing:-0.5px}
 .chart-container{position:relative;height:340px}
 .chart-container-sm{position:relative;height:280px}
 .loading-overlay{position:absolute;inset:0;background:var(--glass-bg);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:var(--card-radius)}
@@ -61,6 +66,7 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
         <button class="btn btn-outline-secondary" onclick="setRange('month')">Month</button>
         <button class="btn btn-outline-secondary" onclick="setRange('all')">All</button>
       </div>
+      <span class="text-muted me-1" style="font-size:0.75rem;white-space:nowrap">Date Sent:</span>
       <input type="date" id="dateFrom" class="form-control form-control-sm" style="width:130px" onchange="refreshAll()">
       <span class="text-muted" style="font-size:0.8rem">to</span>
       <input type="date" id="dateTo" class="form-control form-control-sm" style="width:130px" onchange="refreshAll()">
@@ -77,21 +83,33 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 <main class="container-fluid px-3 py-4" style="position:relative;z-index:1">
 
   <div class="row g-3 mb-4">
-    <div class="col-6 col-lg"><div class="card stat-card revenue"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Total Revenue</small><div class="stat-number" id="statRevenue">--</div></div><i class="bi bi-cash-stack text-success" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
-    <div class="col-6 col-lg"><div class="card stat-card" style="border-left-color:#1cc88a"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Paid Amount</small><div class="stat-number" id="statPaidAmount">--</div></div><i class="bi bi-check-circle text-success" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
-    <div class="col-6 col-lg"><div class="card stat-card" style="border-left-color:#e74a3b"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Unpaid</small><div class="stat-number" id="statUnpaidAmount">--</div></div><i class="bi bi-exclamation-triangle text-danger" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
-    <div class="col-6 col-lg"><div class="card stat-card" style="border-left-color:#f6c23e"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Prev Days Paid Today</small><div class="stat-number" id="statPrevDaysPaid">--</div></div><i class="bi bi-clock-history text-warning" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
-    <div class="col-6 col-lg"><div class="card stat-card" style="border-left-color:#e74a3b"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Total Outstanding</small><div class="stat-number" id="statTotalOutstanding">--</div></div><i class="bi bi-exclamation-diamond text-danger" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card revenue loading"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Total Revenue</small><div class="stat-number" id="statRevenue">--</div></div><i class="bi bi-cash-stack text-success" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card loading" style="border-left-color:#1cc88a"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Paid Amount</small><div class="stat-number" id="statPaidAmount">--</div></div><i class="bi bi-check-circle text-success" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card loading" style="border-left-color:#e74a3b"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Unpaid</small><div class="stat-number" id="statUnpaidAmount">--</div></div><i class="bi bi-exclamation-triangle text-danger" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card loading" style="border-left-color:#f6c23e"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Prev Days Paid Today</small><div class="stat-number" id="statPrevDaysPaid">--</div></div><i class="bi bi-clock-history text-warning" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card loading" style="border-left-color:#e74a3b"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Total Outstanding</small><div class="stat-number" id="statTotalOutstanding">--</div></div><i class="bi bi-exclamation-diamond text-danger" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
     <div class="w-100"></div>
-    <div class="col-6 col-lg"><div class="card stat-card parcels"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Total Parcels</small><div class="stat-number" id="statParcels">--</div></div><i class="bi bi-box-seam text-primary" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
-    <div class="col-6 col-lg"><div class="card stat-card batches"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">In Transit</small><div class="stat-number" id="statInTransit">--</div></div><i class="bi bi-truck text-warning" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
-        <div class="col-6 col-lg"><div class="card stat-card collected"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Awaiting Collection</small><div class="stat-number" id="statReceived">--</div></div><i class="bi bi-inbox text-info" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
-    <div class="col-6 col-lg"><div class="card stat-card collected"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Collected</small><div class="stat-number" id="statCollected">--</div></div><i class="bi bi-check2-circle text-success" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card parcels loading"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Total Parcels</small><div class="stat-number" id="statParcels">--</div></div><i class="bi bi-box-seam text-primary" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card batches loading"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">In Transit</small><div class="stat-number" id="statInTransit">--</div></div><i class="bi bi-truck text-warning" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+        <div class="col-6 col-lg"><div class="card stat-card collected loading"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Awaiting Collection</small><div class="stat-number" id="statReceived">--</div></div><i class="bi bi-inbox text-info" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card collected loading"><div class="card-body d-flex justify-content-between align-items-start"><div><small class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:1px">Collected</small><div class="stat-number" id="statCollected">--</div></div><i class="bi bi-check2-circle text-success" style="font-size:2.2rem;opacity:0.3"></i></div></div></div>
   </div>
 
   <!-- ROW: Location Cards with Status Chips -->
   <div class="row g-3 mb-4" id="rowLocationCards">
     <div class="col-12 text-center text-muted py-4">Loading locations...</div>
+  </div>
+
+  <!-- ROW: Received Parcels grouped by Date -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title"><i class="bi bi-inbox text-info"></i>Received (Awaiting Collection) <span id="receivedDateCount" class="badge bg-info ms-1">--</span></h5>
+          <div id="receivedDateList" class="text-center text-muted py-3">Loading...</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ROW 1: Revenue Charts -->
@@ -187,6 +205,8 @@ const API = (() => {
   return { get, getClientId: () => clientId, setClientId: (id) => { clientId = id; } };
 })();
 
+const locationNames = {};
+
 const colors = ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#6f42c1','#fd7e14','#20c997','#0dcaf0','#d63384'];
 const chartTheme = () => ({
   color: document.documentElement.dataset.bsTheme === 'dark' ? '#e4e6f0' : '#6c757d',
@@ -217,6 +237,8 @@ function kes(num) { const n = Number(num||0); return 'KES ' + n.toLocaleString(u
 async function loadSummary() {
   try {
     const d = await API.get('summary');
+    // Remove loading shimmer from all stat cards
+    document.querySelectorAll('.stat-card.loading').forEach(c => c.classList.remove('loading'));
     animateNumber('statParcels', d.totalParcels);
     animateNumber('statRevenue', d.totalRevenue, kes);
     animateNumber('statPaidAmount', d.paidAmount, kes);
@@ -401,6 +423,13 @@ async function loadClients() {
   } catch(e) { console.error('clients', e); }
 }
 
+async function loadLocationNames() {
+  try {
+    const data = await API.get('locations');
+    data.forEach(l => { locationNames[l.code] = l.name; });
+  } catch(e) { console.error('locations', e); }
+}
+
 function toggleTheme() { const h = document.documentElement; h.dataset.bsTheme = h.dataset.bsTheme === 'dark' ? 'light' : 'dark'; Object.values(charts).forEach(c => c.destroy()); refreshAll(); }
 
 function defaultDates() {
@@ -463,19 +492,29 @@ async function shareDashboard() {
 function exportLocationsCSV() {
   const cards = document.querySelectorAll('#rowLocationCards .card');
   if (!cards.length) return;
-  let csv = 'Location,Total,In Transist,Waiting Collection,Collected\\n';
+  let csv = 'Location,Total,In Transist,Waiting Collection,Collected (Today/Prev),Previous Uncollected\\n';
   cards.forEach(card => {
     const loc = card.querySelector('h6')?.childNodes[1]?.textContent?.trim() || '';
     const total = card.querySelector('.badge.bg-secondary')?.textContent?.trim() || '0';
     const chips = card.querySelectorAll('.d-flex.flex-wrap .badge');
-    const counts = { 'In Transist': '0', 'Waiting Collection': '0', 'Collected': '0' };
+    const counts = { 'In Transist': '0', 'Waiting Collection': '0', 'Collected (Today/Prev)': '0', 'Previous Uncollected': '0' };
     chips.forEach(chip => {
       const txt = chip.textContent || '';
       for (const k of Object.keys(counts)) {
-        if (txt.includes(k)) { counts[k] = chip.querySelector('span:last-child')?.textContent?.trim() || '0'; }
+        if (k === 'Collected (Today/Prev)') {
+          // Collected chip shows "N today · M prev"
+          if (txt.includes('Collected')) {
+            const pills = chip.querySelectorAll('span span');
+            const today = pills[0]?.textContent?.replace(' today','').trim() || '0';
+            const prev = pills[1]?.textContent?.replace(' prev','').trim() || '0';
+            counts[k] = today + '/' + prev;
+          }
+        } else if (txt.includes(k.replace(' (Today/Prev)',''))) {
+          counts[k] = chip.querySelector('span:last-child')?.textContent?.trim() || '0';
+        }
       }
     });
-    csv += `"${loc}",${total},${counts['In Transist']},${counts['Waiting Collection']},${counts['Collected']}\\n`;
+    csv += `"${loc}",${total},${counts['In Transist']},${counts['Waiting Collection']},${counts['Collected (Today/Prev)']},${counts['Previous Uncollected']}\\n`;
   });
   const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
@@ -518,20 +557,43 @@ async function loadLocationStatus() {
     // Group by location
     const map = {};
     d.forEach(x => { if (!map[x.location]) map[x.location] = {}; map[x.location][x.status] = x.count; });
-    const locations = Object.keys(map).sort();
+    // Sort by total parcels (descending), excluding Previous_Uncollected
+    const locations = Object.keys(map).sort((a, b) => {
+      const totalA = Object.entries(map[a]).filter(([k]) => k !== 'Previous_Uncollected').reduce((s, [,v]) => s + v, 0);
+      const totalB = Object.entries(map[b]).filter(([k]) => k !== 'Previous_Uncollected').reduce((s, [,v]) => s + v, 0);
+      return totalB - totalA;
+    });
 
-    const statusColors = { 'Open':'#e74a3b','In_Transist':'#f6c23e','Waiting_Collection':'#36b9cc','Collected':'#1cc88a' };
-    const statusOrder = ['Open','In_Transist','Waiting_Collection','Collected'];
+    const statusColors = { 'Open':'#e74a3b','In_Transist':'#f6c23e','Waiting_Collection':'#36b9cc','Previous_Uncollected':'#fd7e14' };
+    const statusOrder = ['Open','In_Transist','Waiting_Collection','Previous_Uncollected'];
 
     let html = '';
     locations.forEach(loc => {
       const counts = map[loc];
-      const total = Object.values(counts).reduce((a,b) => a+b, 0);
+      const todayCollected = counts['Collected_Today'] || 0;
+      const prevCollected = counts['Prev_Collected'] || 0;
+      const collectedTotal = todayCollected + prevCollected;
+      // Exclude Previous_Uncollected from total (it's a subset of Waiting_Collection)
+      const total = Object.entries(counts)
+        .filter(([k]) => k !== 'Previous_Uncollected')
+        .reduce((a, [,v]) => a + v, 0);
       html += '<div class="col-lg-4 col-md-6"><div class="card h-100"><div class="card-body">';
-      html += '<h6 class="card-title fw-bold mb-3"><i class="bi bi-geo-alt-fill text-primary me-1"></i>' + loc + ' <span class="badge bg-secondary ms-1">' + total + '</span></h6>';
+      html += '<h6 class="card-title fw-bold mb-3"><i class="bi bi-geo-alt-fill text-primary me-1"></i>' + (locationNames[loc] || loc) + ' <span class="badge bg-secondary ms-1">' + total + '</span></h6>';
       html += '<div class="d-flex flex-wrap gap-2">';
       statusOrder.forEach(s => {
         if (s === 'Open') return;
+        if (s === 'Previous_Uncollected') {
+          // Render Collected before Previous Uncollected
+          if (collectedTotal > 0) {
+            const colColor = '#1cc88a';
+            html += '<span class="badge fs-6 d-inline-flex align-items-center gap-2" style="background:' + colColor + '15;color:' + colColor + ';border:1px solid ' + colColor + '44;padding:6px 12px;border-radius:20px" title="' + todayCollected + ' sent today, ' + prevCollected + ' sent earlier">';
+            html += '<small style="opacity:0.7">Collected</small>';
+            html += '<span style="display:inline-flex;align-items:center;gap:4px">';
+            html += '<span style="background:#fff;color:' + colColor + ';border-radius:10px;padding:1px 7px;font-weight:700;font-size:0.78rem">' + todayCollected + ' today</span>';
+            html += '<span style="background:' + colColor + ';color:#fff;border-radius:10px;padding:1px 7px;font-weight:700;font-size:0.78rem">' + prevCollected + ' prev</span>';
+            html += '</span></span>';
+          }
+        }
         const c = counts[s] || 0;
         const color = statusColors[s] || '#6c757d';
         html += '<span class="badge fs-6 d-inline-flex align-items-center gap-2" style="background:' + color + '15;color:' + color + ';border:1px solid ' + color + '44;padding:6px 12px;border-radius:20px"><small style="opacity:0.7">' + s.replace(/_/g,' ') + '</small><span style="display:inline-flex;align-items:center;justify-content:center;background:' + color + ';color:#fff;border-radius:50%;width:28px;height:28px;font-weight:800;font-size:0.85rem">' + c + '</span></span>';
@@ -561,7 +623,7 @@ async function refreshAll() {
 }
 
 defaultDates();
-loadClients().then(() => refreshAll());
+loadClients().then(() => loadLocationNames()).then(() => refreshAll());
 </script>
 </body>
 </html>

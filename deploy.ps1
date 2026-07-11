@@ -58,6 +58,13 @@ if (-not $ApiOnly) {
     scp "$ApkDir\app-armeabi-v7a-release.apk" "${Server}:$RemoteUpdates/app-armeabi-v7a-release.apk"
     scp "$ApkDir\app-x86_64-release.apk" "${Server}:$RemoteUpdates/app-x86_64-release.apk"
 
+    # Also copy to ParcelApp folder for auto-update (ABI detection)
+    $ApkDir = "$ApiProject\wwwroot\updates\app-arm64-v8a-release.apk"  # already deployed above, copy remotely
+    ssh $Server "copy $RemoteUpdates/app-release.apk $RemotePath/ParcelApp/ParcelApp.apk /Y & copy $RemoteUpdates/app-arm64-v8a-release.apk $RemotePath/ParcelApp/app-arm64-v8a-release.apk /Y & copy $RemoteUpdates/app-armeabi-v7a-release.apk $RemotePath/ParcelApp/app-armeabi-v7a-release.apk /Y & copy $RemoteUpdates/app-x86_64-release.apk $RemotePath/ParcelApp/app-x86_64-release.apk /Y"
+
+    # Deploy version file for auto-update
+    scp "$ApiProject\app_version.json" "${Server}:$RemotePath/ParcelApp/app_version.json"
+
     Write-Host "APKs deployed." -ForegroundColor Green
 }
 

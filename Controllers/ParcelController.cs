@@ -40,8 +40,24 @@ namespace ParcelAPI.Controllers
                 if (Client.NavParcelService == null)
                     return BadRequest(new Results<Parcels.Parcel[]> { Code = -1, Desc = "NAV Parcel Service not available" });
 
+                // Sync mode: fetch all, then filter server-side
+                if (!string.IsNullOrEmpty(request?.SyncLocation))
+                {
+                    var loc = request.SyncLocation;
+                    var today = DateTime.Today;
+                    var all = await Client.NavParcelService.ReadMultipleParcelsAsync(null, 0);
+                    var filtered = all
+                        .Where(p =>
+                            (p.From == loc || p.To == loc) &&
+                            (p.Date_sent.Date == today || p.Status != Parcels.Status.Collected))
+                        .ToArray();
+                    EnsureTimeFields(filtered);
+                    return Ok(new Results<Parcels.Parcel[]> { Code = 0, Contents = filtered });
+                }
+
                 var filters = BuildNavFilters(request);
                 var parcels = await Client.NavParcelService.ReadMultipleParcelsAsync(filters, request?.PageSize ?? 100);
+                EnsureTimeFields(parcels);
 
                 return Ok(new Results<Parcels.Parcel[]> { Code = 0, Contents = parcels });
             }
@@ -619,6 +635,18 @@ namespace ParcelAPI.Controllers
             }
         }
 
+        /// <summary>Ensures DateTime Specified flags are true so JSON serializer includes time fields.</summary>
+        private static void EnsureTimeFields(Parcels.Parcel[] parcels)
+        {
+            foreach (var p in parcels)
+            {
+                if (p.Time_Created > DateTime.MinValue) p.Time_CreatedSpecified = true;
+                if (p.Time_Sent > DateTime.MinValue) p.Time_SentSpecified = true;
+                if (p.Time_Collected > DateTime.MinValue) p.Time_CollectedSpecified = true;
+                if (p.Time_Delivered > DateTime.MinValue) p.Time_DeliveredSpecified = true;
+            }
+        }
+
         private Parcels.Parcel_Filter[]? BuildNavFilters(NavParcelRequest? request)
         {
             if (request == null) return null;
@@ -635,6 +663,10 @@ namespace ParcelAPI.Controllers
                 filters.Add(new Parcels.Parcel_Filter { Field = Parcels.Parcel_Fields.Date_sent, Criteria = $">={request.DateFrom.Value:yyyy-MM-dd}" });
             if (request.DateTo.HasValue)
                 filters.Add(new Parcels.Parcel_Filter { Field = Parcels.Parcel_Fields.Date_sent, Criteria = $"<={request.DateTo.Value:yyyy-MM-dd}" });
+            if (!string.IsNullOrEmpty(request.FromLocation))
+                filters.Add(new Parcels.Parcel_Filter { Field = Parcels.Parcel_Fields.From, Criteria = request.FromLocation });
+            if (!string.IsNullOrEmpty(request.ToLocation))
+                filters.Add(new Parcels.Parcel_Filter { Field = Parcels.Parcel_Fields.To, Criteria = request.ToLocation });
             return filters.Count > 0 ? filters.ToArray() : null;
         }
 
@@ -868,7 +900,11 @@ namespace ParcelAPI.Controllers
         public Parcels.Status? Status { get; set; }
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
+        public string? FromLocation { get; set; }
+        public string? ToLocation { get; set; }
         public int PageSize { get; set; } = 100;
+        /// <summary>If set, fetches ALL parcels and filters: (From=loc OR To=loc) AND (Date_sent=today OR Status!=Collected)</summary>
+        public string? SyncLocation { get; set; }
     }
 
     public class NavUserRequest

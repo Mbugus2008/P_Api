@@ -106,8 +106,10 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 // app.UseHttpsRedirection();  // disabled — HTTP used for older Android devices
+var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+provider.Mappings[".apk"] = "application/vnd.android.package-archive";
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = provider });
 
 var parcelAppPath = System.IO.Path.Combine(app.Environment.ContentRootPath, "ParcelApp");
 if (System.IO.Directory.Exists(parcelAppPath))
