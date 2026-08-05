@@ -186,7 +186,12 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 <script>
 const API = (() => {
   const u = new URLSearchParams(location.search);
-  let clientId = u.get('client') || '';
+  // Encoded client param only (?c=<base64>)
+  let clientId = '';
+  const encoded = u.get('c');
+  if (encoded) {
+    try { clientId = atob(encoded); } catch(_) { clientId = ''; }
+  }
   function headers() { const h = {}; if (clientId) h['X-Client-Identifier'] = clientId; return h; }
   function dateParams() {
     const f = document.getElementById('dateFrom')?.value;

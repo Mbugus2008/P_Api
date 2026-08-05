@@ -46,10 +46,12 @@ namespace ParcelAPI.Controllers
                     var loc = request.SyncLocation;
                     var today = DateTime.Today;
                     var all = await Client.NavParcelService.ReadMultipleParcelsAsync(null, 0);
+                    // Pull all parcels for this location (both From and To), plus any
+                    // old uncollected parcels from other locations that might be relevant.
                     var filtered = all
                         .Where(p =>
-                            (p.From == loc || p.To == loc) &&
-                            (p.Date_sent.Date == today || p.Status != Parcels.Status.Collected))
+                            (p.From == loc || p.To == loc) ||
+                            (p.Status != Parcels.Status.Collected && p.Date_sent.Date >= today.AddDays(-7)))
                         .ToArray();
                     EnsureTimeFields(filtered);
                     return Ok(new Results<Parcels.Parcel[]> { Code = 0, Contents = filtered });
