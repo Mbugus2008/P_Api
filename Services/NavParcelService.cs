@@ -9,7 +9,6 @@ namespace ParcelAPI.Services
         Task<Parcels.Parcel[]> ReadMultipleParcelsAsync(Parcels.Parcel_Filter[]? filters, int pageSize = 100);
         Task<Parcels.Parcel> CreateParcelAsync(Parcels.Parcel parcel);
         Task<Parcels.Parcel> UpdateParcelAsync(Parcels.Parcel parcel);
-        Task<bool> DeleteParcelAsync(string key);
     }
 
     public class NavParcelService : INavParcelService, IDisposable
@@ -114,23 +113,6 @@ namespace ParcelAPI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating parcel {DocumentNo} in NAV", parcel.Document_No);
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteParcelAsync(string key)
-        {
-            try
-            {
-                _logger.LogInformation("Deleting parcel with key {Key} from NAV for client {ClientCode}", 
-                    key, _clientInfo.ClientCode);
-                
-                var result = await _client.DeleteAsync(key);
-                return result.Delete_Result1;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting parcel with key {Key} from NAV", key);
                 throw;
             }
         }

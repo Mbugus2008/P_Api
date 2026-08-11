@@ -87,14 +87,6 @@ namespace Parcels
         // CODEGEN: Generating message contract since the operation has multiple return values.
         [System.ServiceModel.OperationContractAttribute(Action="urn:microsoft-dynamics-schemas/page/parcel:UpdateMultiple", ReplyAction="*")]
         System.Threading.Tasks.Task<Parcels.UpdateMultiple_Result> UpdateMultipleAsync(Parcels.UpdateMultiple request);
-        
-        // CODEGEN: Generating message contract since the wrapper name (Delete_Result) of message Delete_Result does not match the default value (Delete)
-        [System.ServiceModel.OperationContractAttribute(Action="urn:microsoft-dynamics-schemas/page/parcel:Delete", ReplyAction="*")]
-        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        Parcels.Delete_Result Delete(Parcels.Delete request);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="urn:microsoft-dynamics-schemas/page/parcel:Delete", ReplyAction="*")]
-        System.Threading.Tasks.Task<Parcels.Delete_Result> DeleteAsync(Parcels.Delete request);
     }
     
     /// <remarks/>
@@ -211,6 +203,12 @@ namespace Parcels
         private System.DateTime payment_TimeField;
         
         private bool payment_TimeFieldSpecified;
+        
+        private System.DateTime last_UpdatedField;
+        
+        private bool last_UpdatedFieldSpecified;
+        
+        private string locsField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -967,6 +965,48 @@ namespace Parcels
                 this.payment_TimeFieldSpecified = value;
             }
         }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=38)]
+        public System.DateTime Last_Updated
+        {
+            get
+            {
+                return this.last_UpdatedField;
+            }
+            set
+            {
+                this.last_UpdatedField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool Last_UpdatedSpecified
+        {
+            get
+            {
+                return this.last_UpdatedFieldSpecified;
+            }
+            set
+            {
+                this.last_UpdatedFieldSpecified = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=39)]
+        public string Locs
+        {
+            get
+            {
+                return this.locsField;
+            }
+            set
+            {
+                this.locsField = value;
+            }
+        }
     }
     
     /// <remarks/>
@@ -1173,6 +1213,12 @@ namespace Parcels
         
         /// <remarks/>
         Payment_Time,
+        
+        /// <remarks/>
+        Last_Updated,
+        
+        /// <remarks/>
+        Locs,
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
@@ -1541,46 +1587,6 @@ namespace Parcels
         }
     }
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-    [System.ServiceModel.MessageContractAttribute(WrapperName="Delete", WrapperNamespace="urn:microsoft-dynamics-schemas/page/parcel", IsWrapped=true)]
-    public partial class Delete
-    {
-        
-        [System.ServiceModel.MessageBodyMemberAttribute(Namespace="urn:microsoft-dynamics-schemas/page/parcel", Order=0)]
-        public string Key;
-        
-        public Delete()
-        {
-        }
-        
-        public Delete(string Key)
-        {
-            this.Key = Key;
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-    [System.ServiceModel.MessageContractAttribute(WrapperName="Delete_Result", WrapperNamespace="urn:microsoft-dynamics-schemas/page/parcel", IsWrapped=true)]
-    public partial class Delete_Result
-    {
-        
-        [System.ServiceModel.MessageBodyMemberAttribute(Name="Delete_Result", Namespace="urn:microsoft-dynamics-schemas/page/parcel", Order=0)]
-        public bool Delete_Result1;
-        
-        public Delete_Result()
-        {
-        }
-        
-        public Delete_Result(bool Delete_Result1)
-        {
-            this.Delete_Result1 = Delete_Result1;
-        }
-    }
-    
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
     public interface Parcel_PortChannel : Parcels.Parcel_Port, System.ServiceModel.IClientChannel
     {
@@ -1844,33 +1850,6 @@ namespace Parcels
         public System.Threading.Tasks.Task<Parcels.UpdateMultiple_Result> UpdateMultipleAsync(Parcels.UpdateMultiple request)
         {
             return base.Channel.UpdateMultipleAsync(request);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        Parcels.Delete_Result Parcels.Parcel_Port.Delete(Parcels.Delete request)
-        {
-            return base.Channel.Delete(request);
-        }
-        
-        public bool Delete(string Key)
-        {
-            Parcels.Delete inValue = new Parcels.Delete();
-            inValue.Key = Key;
-            Parcels.Delete_Result retVal = ((Parcels.Parcel_Port)(this)).Delete(inValue);
-            return retVal.Delete_Result1;
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<Parcels.Delete_Result> Parcels.Parcel_Port.DeleteAsync(Parcels.Delete request)
-        {
-            return base.Channel.DeleteAsync(request);
-        }
-        
-        public System.Threading.Tasks.Task<Parcels.Delete_Result> DeleteAsync(string Key)
-        {
-            Parcels.Delete inValue = new Parcels.Delete();
-            inValue.Key = Key;
-            return ((Parcels.Parcel_Port)(this)).DeleteAsync(inValue);
         }
         
         public virtual System.Threading.Tasks.Task OpenAsync()

@@ -40,21 +40,29 @@ namespace ParcelAPI.Controllers
                 if (Client.NavParcelService == null)
                     return BadRequest(new Results<Parcels.Parcel[]> { Code = -1, Desc = "NAV Parcel Service not available" });
 
-                // Sync mode: fetch all, then filter server-side
+                // Sync mode: single NAV call using Locs + optional Last_Updated filter
                 if (!string.IsNullOrEmpty(request?.SyncLocation))
                 {
                     var loc = request.SyncLocation;
-                    var today = DateTime.Today;
-                    var all = await Client.NavParcelService.ReadMultipleParcelsAsync(null, 0);
-                    // Pull all parcels for this location (both From and To), plus any
-                    // old uncollected parcels from other locations that might be relevant.
-                    var filtered = all
-                        .Where(p =>
-                            (p.From == loc || p.To == loc) ||
-                            (p.Status != Parcels.Status.Collected && p.Date_sent.Date >= today.AddDays(-7)))
-                        .ToArray();
-                    EnsureTimeFields(filtered);
-                    return Ok(new Results<Parcels.Parcel[]> { Code = 0, Contents = filtered });
+                    var syncFilters = new List<Parcels.Parcel_Filter>
+                    {
+                        new() { Field = Parcels.Parcel_Fields.Locs, Criteria = $"*{loc}*" }
+                    };
+
+                    // Incremental sync: only get parcels updated since last pull
+                    if (request?.LastSyncedAt != null)
+                    {
+                        syncFilters.Add(new Parcels.Parcel_Filter
+                        {
+                            Field = Parcels.Parcel_Fields.Last_Updated,
+                            Criteria = $"{request.LastSyncedAt.Value.ToUniversalTime():MM/dd/yy hh:mm:ss tt}.."
+                        });
+                    }
+
+                    var syncParcels = await Client.NavParcelService.ReadMultipleParcelsAsync(syncFilters.ToArray(), 0);
+
+                    EnsureTimeFields(syncParcels);
+                    return Ok(new Results<Parcels.Parcel[]> { Code = 0, Contents = syncParcels });
                 }
 
                 var filters = BuildNavFilters(request);
@@ -248,45 +256,7 @@ namespace ParcelAPI.Controllers
             return UpdateNavParcel();
         }
 
-        [HttpDelete("nav/parcels/{key}")]
-        public async Task<ActionResult<Results<bool>>> DeleteNavParcel(string key)
-        {
-            try
-            {
-                if (Client.NavParcelService == null)
-                    return BadRequest(new Results<bool> { Code = -1, Desc = "NAV Parcel Service not available" });
 
-                var deleted = await Client.NavParcelService.DeleteParcelAsync(key);
-                return Ok(new Results<bool> { Code = deleted ? 0 : -1, Desc = deleted ? "Deleted" : "Failed", Contents = deleted });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting parcel");
-                return StatusCode(500, new Results<bool> { Code = -1, Desc = ex.Message });
-            }
-        }
-
-        [HttpDelete("nav/parcels/by-document/{documentNo}")]
-        public async Task<ActionResult<Results<bool>>> DeleteNavParcelByDocumentNo(string documentNo)
-        {
-            try
-            {
-                if (Client.NavParcelService == null)
-                    return BadRequest(new Results<bool> { Code = -1, Desc = "NAV Parcel Service not available" });
-
-                var parcel = await Client.NavParcelService.ReadParcelAsync(documentNo);
-                if (parcel == null)
-                    return NotFound(new Results<bool> { Code = -1, Desc = $"Parcel {documentNo} not found" });
-
-                var deleted = await Client.NavParcelService.DeleteParcelAsync(parcel.Key);
-                return Ok(new Results<bool> { Code = deleted ? 0 : -1, Desc = deleted ? "Deleted" : "Failed", Contents = deleted });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting parcel {DocumentNo}", documentNo);
-                return StatusCode(500, new Results<bool> { Code = -1, Desc = ex.Message });
-            }
-        }
 
         [HttpPost("nav/users")]
         public async Task<ActionResult<Results<NavUsers.Parcel_Users[]>>> GetNavUsers([FromBody] NavUserRequest? request)
@@ -905,8 +875,10 @@ namespace ParcelAPI.Controllers
         public string? FromLocation { get; set; }
         public string? ToLocation { get; set; }
         public int PageSize { get; set; } = 100;
-        /// <summary>If set, fetches ALL parcels and filters: (From=loc OR To=loc) AND (Date_sent=today OR Status!=Collected)</summary>
+        /// <summary>If set, uses Locs field (contains both From and To) to find all parcels for this location in a single NAV call.</summary>
         public string? SyncLocation { get; set; }
+        /// <summary>If set, adds Last_Updated >= this date for incremental sync.</summary>
+        public DateTime? LastSyncedAt { get; set; }
     }
 
     public class NavUserRequest
