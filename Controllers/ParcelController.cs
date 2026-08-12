@@ -607,15 +607,34 @@ namespace ParcelAPI.Controllers
             }
         }
 
-        /// <summary>Ensures DateTime Specified flags are true so JSON serializer includes time fields.</summary>
+        /// <summary>Ensures DateTime Specified flags are true so JSON serializer includes all date/time fields.</summary>
         private static void EnsureTimeFields(Parcels.Parcel[] parcels)
         {
             foreach (var p in parcels)
             {
+                if (p.Date_Created > DateTime.MinValue) p.Date_CreatedSpecified = true;
                 if (p.Time_Created > DateTime.MinValue) p.Time_CreatedSpecified = true;
                 if (p.Time_Sent > DateTime.MinValue) p.Time_SentSpecified = true;
                 if (p.Time_Collected > DateTime.MinValue) p.Time_CollectedSpecified = true;
                 if (p.Time_Delivered > DateTime.MinValue) p.Time_DeliveredSpecified = true;
+
+                // Business rule: sender-paid parcels are paid at creation/dispatch time.
+                // BC doesn't always store Payment_Date for these — normalize on read
+                // so all clients get a consistent payment date.
+                if (p.Paid && p.Payment_Date <= DateTime.MinValue &&
+                    p.Who_to_Pay == Parcels.Who_to_Pay.Sender)
+                {
+                    var creationDate = p.Date_Created > DateTime.MinValue
+                        ? p.Date_Created
+                        : p.Date_sent;
+                    if (creationDate > DateTime.MinValue)
+                    {
+                        p.Payment_Date = creationDate;
+                    }
+                }
+
+                if (p.Payment_Date > DateTime.MinValue) p.Payment_DateSpecified = true;
+                if (p.Payment_Time > DateTime.MinValue) p.Payment_TimeSpecified = true;
             }
         }
 
@@ -721,6 +740,20 @@ namespace ParcelAPI.Controllers
 
         private static void ApplyParcelSpecifiedFlags(Parcels.Parcel parcel)
         {
+            // Business rule: sender-paid parcels are paid at creation/dispatch time.
+            // If Paid but Payment_Date is missing, use creation date (fallback: sent date).
+            if (parcel.Paid && !HasDateValue(parcel.Payment_Date) &&
+                parcel.Who_to_Pay == Parcels.Who_to_Pay.Sender)
+            {
+                var creationDate = HasDateValue(parcel.Date_Created)
+                    ? parcel.Date_Created
+                    : parcel.Date_sent;
+                if (HasDateValue(creationDate))
+                {
+                    parcel.Payment_Date = creationDate;
+                }
+            }
+
             parcel.Date_sentSpecified = HasDateValue(parcel.Date_sent);
             parcel.StatusSpecified = true;
             parcel.Who_to_PaySpecified = true;
