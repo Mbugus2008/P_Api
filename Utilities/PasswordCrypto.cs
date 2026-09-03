@@ -32,6 +32,31 @@ namespace ParcelAPI.Utilities
                    !string.IsNullOrWhiteSpace(parts[2]);
         }
 
+        /// <summary>
+        /// Verifies a candidate password against the stored value.
+        /// Handles hashed (sha256$salt$hash) and legacy plain-text records.
+        /// </summary>
+        public static bool VerifyPassword(string? password, string? stored)
+        {
+            var clean = (password ?? string.Empty).Trim();
+            var storedClean = (stored ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(clean) || string.IsNullOrEmpty(storedClean))
+            {
+                return false;
+            }
+
+            if (IsHashedPassword(storedClean))
+            {
+                var parts = storedClean.Split('$');
+                var salt = parts[1];
+                var expected = HashWithSalt(clean, salt);
+                return string.Equals(expected, parts[2], StringComparison.OrdinalIgnoreCase);
+            }
+
+            // Legacy plain-text stored password
+            return string.Equals(clean, storedClean, StringComparison.Ordinal);
+        }
+
         public static string HashPassword(string password)
         {
             var clean = password.Trim();

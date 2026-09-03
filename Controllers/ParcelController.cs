@@ -3,6 +3,7 @@ using ParcelAPI.Clients;
 using ParcelAPI.Filters;
 using ParcelAPI.Models;
 using ParcelAPI.Services;
+using ParcelAPI.Utilities;
 using NavUsers = User;
 using NavLocations = Loc;
 using NavBatches = P_Batches;
@@ -308,6 +309,18 @@ namespace ParcelAPI.Controllers
 
                 if (Client.NavUserService == null)
                     return BadRequest(new Results<NavUsers.Parcel_Users> { Code = -1, Desc = "NAV User Service not available" });
+
+                // When the client supplies the current password, verify it before changing.
+                // (Empty OldPassword keeps the legacy "set password" flow working.)
+                if (!string.IsNullOrEmpty(request.OldPassword))
+                {
+                    var existing = await Client.NavUserService.ReadUserAsync(request.AgentCode);
+                    if (existing == null)
+                        return NotFound(new Results<NavUsers.Parcel_Users> { Code = -1, Desc = $"User {request.AgentCode} not found" });
+
+                    if (!PasswordCrypto.VerifyPassword(request.OldPassword, existing.Password))
+                        return BadRequest(new Results<NavUsers.Parcel_Users> { Code = -1, Desc = "Current password is incorrect" });
+                }
 
                 var updatedUser = await Client.NavUserService.ChangePasswordAsync(request.AgentCode, request.Password);
                 if (updatedUser == null)
@@ -958,6 +971,7 @@ namespace ParcelAPI.Controllers
     public class ChangePasswordRequest
     {
         public string AgentCode { get; set; } = string.Empty;
+        public string OldPassword { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
 

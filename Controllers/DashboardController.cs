@@ -115,11 +115,12 @@ namespace ParcelAPI.Controllers
                         paidAmount = paidAmount,
                         unpaidAmount = totalRevenue - paidAmount,
                         totalOutstanding = allTotal - allPaid,
-                        previousDaysPaidToday = parcels
+                        previousDaysPaidToday = allParcels
                             .Where(p => p.Paid == true
                                 && p.Date_sent.Date < today
                                 && p.Payment_Date > DateTime.MinValue
-                                && p.Payment_Date.Date == today)
+                                && p.Payment_Date.Date == today
+                                && p.Who_to_Pay == Parcels.Who_to_Pay.Receiver)
                             .Sum(p => p.Amount_Paid),
                         pending = parcels.Count(p => p.Status == Parcels.Status.Open),
                         inTransit = parcels.Count(p => p.Status == Parcels.Status.In_Transist),
