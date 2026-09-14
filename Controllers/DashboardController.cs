@@ -295,6 +295,33 @@ namespace ParcelAPI.Controllers
                     .ToList();
                 grouped.AddRange(prevUncollected);
 
+                // Ensure every configured NAV location is represented, even when it has
+                // no incoming parcels yet (e.g. a newly added location).
+                try
+                {
+                    var client = GetClient();
+                    if (client.NavLocationService != null)
+                    {
+                        var navLocations = await client.NavLocationService.ReadMultipleLocationsAsync(null, 0);
+                        var known = new HashSet<string>(
+                            grouped.Select(g => (g.location ?? string.Empty).Trim()),
+                            StringComparer.OrdinalIgnoreCase);
+
+                        foreach (var navLocation in navLocations)
+                        {
+                            var code = navLocation.Code?.Trim();
+                            if (!string.IsNullOrEmpty(code) && !known.Contains(code))
+                            {
+                                grouped.Add(new { location = code, status = "Open", count = 0 });
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not load NAV locations for location status");
+                }
+
                 var result = grouped
                     .OrderBy(x => x.location)
                     .ThenBy(x => x.status)

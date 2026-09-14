@@ -19,6 +19,12 @@ namespace ParcelAPI.Models
         [JsonPropertyName("releaseNotes")]
         public string? ReleaseNotes { get; set; }
 
+        [JsonPropertyName("apkSize")]
+        public long? ApkSize { get; set; }
+
+        [JsonPropertyName("apkSha256")]
+        public string? ApkSha256 { get; set; }
+
         [JsonPropertyName("forceUpdate")]
         public bool ForceUpdate { get; set; }
     }

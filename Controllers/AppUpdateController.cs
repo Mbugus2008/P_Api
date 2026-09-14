@@ -62,6 +62,8 @@ namespace ParcelAPI.Controllers
                     BuildDate = root.TryGetProperty("buildDate", out var bd) ? bd.GetString() ?? "" : "",
                     DownloadUrl = root.TryGetProperty("downloadUrl", out var du) ? du.GetString() ?? $"{baseUrl}/ParcelApp/ParcelApp.apk" : $"{baseUrl}/ParcelApp/ParcelApp.apk",
                     ReleaseNotes = root.TryGetProperty("releaseNotes", out var rn) ? rn.GetString() : null,
+                    ApkSize = root.TryGetProperty("apkSize", out var asz) && asz.ValueKind == JsonValueKind.Number ? asz.GetInt64() : null,
+                    ApkSha256 = root.TryGetProperty("apkSha256", out var ash) ? ash.GetString() : null,
                     ForceUpdate = root.TryGetProperty("forceUpdate", out var fu) && fu.GetBoolean()
                 };
 
