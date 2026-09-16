@@ -72,6 +72,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Optional per-deployment override of the NAV/BC host (appsettings: Nav:HostOverride).
+// Needed when the API runs on the same machine as NAV: calling it by its public
+// hostname trips the Windows loopback check and fails with 401 Negotiate.
+NavRuntimeSettings.HostOverride = builder.Configuration["Nav:HostOverride"];
+
 // Ensure eTIMS table exists
 using (var scope = app.Services.CreateScope())
 {

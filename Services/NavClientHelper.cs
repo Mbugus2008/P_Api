@@ -3,6 +3,18 @@ using ParcelAPI.Models;
 
 namespace ParcelAPI.Services
 {
+    /// <summary>
+    /// Runtime NAV connection settings that are not part of the client record.
+    /// HostOverride lets a deployment that runs on the NAV/BC server itself call
+    /// it via "localhost" (same-machine calls by hostname trip the Windows
+    /// loopback check and fail with 401 Negotiate).
+    /// Configure with "Nav:HostOverride" in appsettings.json.
+    /// </summary>
+    public static class NavRuntimeSettings
+    {
+        public static string? HostOverride { get; set; }
+    }
+
     public static class NavClientHelper
     {
         public static dynamic InitializeClient<T>(Client cl)
@@ -117,7 +129,7 @@ namespace ParcelAPI.Services
 
         private static string BaseUrl(Client cl)
         {
-            var host = cl.IPAddress ?? "localhost";
+            var host = ResolveHost(cl);
             var port = cl.Port ?? 7047;
             var instance = cl.Instance ?? "NAV";
             var company = cl.Company ?? "Company";
@@ -127,12 +139,24 @@ namespace ParcelAPI.Services
 
         private static string BaseUrlCodeunit(Client cl)
         {
-            var host = cl.IPAddress ?? "localhost";
+            var host = ResolveHost(cl);
             var port = cl.Port ?? 7047;
             var instance = cl.Instance ?? "NAV";
             var company = cl.Company ?? "Company";
 
             return $"http://{host}:{port}/{instance}/WS/{Uri.EscapeDataString(company)}/Codeunit/";
+        }
+
+        /// <summary>Client IPAddress, unless this deployment overrides the host.</summary>
+        private static string ResolveHost(Client cl)
+        {
+            var overrideHost = NavRuntimeSettings.HostOverride;
+            if (!string.IsNullOrWhiteSpace(overrideHost))
+            {
+                return overrideHost.Trim();
+            }
+
+            return cl.IPAddress ?? "localhost";
         }
     }
 }
