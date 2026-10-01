@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using ParcelAPI.Clients;
 using ParcelAPI.Data;
 using ParcelAPI.Filters;
 using ParcelAPI.Models;
+using System.Collections.Concurrent;
 
 namespace ParcelAPI.Controllers
 {
@@ -13,6 +15,30 @@ namespace ParcelAPI.Controllers
     {
         private readonly ILogger<DashboardController> _logger;
         private readonly ParcelContext _db;
+
+        // ------------------------------------------------------------------
+        // Dashboard data cache.
+        // Every dashboard chart used to re-read the ENTIRE parcel table from
+        // Business Central (~50-90s per read) — a single page load triggered
+        // a dozen+ full reads. Now one shared read is reused by all endpoints:
+        //   fresh  : served directly
+        //   stale  : served immediately + refreshed in the background
+        //   cold   : first caller waits once, others share the result
+        // ------------------------------------------------------------------
+        private const string ParcelsKeyPrefix = "dash-parcels::";
+        private const string BatchesKeyPrefix = "dash-batches::";
+        private const string LocationsKeyPrefix = "dash-locations::";
+        private static readonly MemoryCache Cache = new(new MemoryCacheOptions());
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> Locks = new();
+        private static readonly ConcurrentDictionary<string, byte> Refreshing = new();
+        private static readonly TimeSpan FreshTtl = TimeSpan.FromSeconds(120);
+        private static readonly TimeSpan ParcelStaleTtl = TimeSpan.FromMinutes(30);
+        private static readonly TimeSpan BatchStaleTtl = TimeSpan.FromMinutes(30);
+
+        private sealed record ParcelCacheEntry(Parcels.Parcel[] Parcels, DateTime FetchedAt);
+        private sealed record BatchCacheEntry(P_Batches.ParcelBatches[] Batches, DateTime FetchedAt);
+        private sealed record LocationCacheEntry(Loc.Locations[] Locations, DateTime FetchedAt);
+        private static readonly TimeSpan LocationTtl = TimeSpan.FromMinutes(10);
 
         public DashboardController(ILogger<DashboardController> logger, ParcelContext db)
         {
@@ -48,11 +74,7 @@ namespace ParcelAPI.Controllers
         {
             try
             {
-                var client = GetClient();
-                if (client.NavLocationService == null)
-                    return Ok(new Results<object[]> { Code = 0, Contents = Array.Empty<object>() });
-
-                var locations = await client.NavLocationService.ReadMultipleLocationsAsync(null, 0);
+                var locations = await GetLocationsCachedAsync();
                 var result = locations
                     .Select(l => new { code = l.Code, name = l.Name })
                     .ToArray();
@@ -68,9 +90,7 @@ namespace ParcelAPI.Controllers
 
         private async Task<Parcels.Parcel[]> GetParcelsAsync(DateTime? from = null, DateTime? to = null)
         {
-            var client = GetClient();
-            var parcels = await client.NavParcelService.ReadMultipleParcelsAsync(null, 0)
-                ?? Array.Empty<Parcels.Parcel>();
+            var parcels = await GetParcelsCachedAsync();
 
             if (from.HasValue)
                 parcels = parcels.Where(p => p.Date_sent >= from.Value).ToArray();
@@ -80,13 +100,124 @@ namespace ParcelAPI.Controllers
             return parcels;
         }
 
+        /// <summary>Full parcel list from one shared cache (see cache notes above).</summary>
+        private async Task<Parcels.Parcel[]> GetParcelsCachedAsync()
+        {
+            var client = GetClient();
+            var key = ParcelsKeyPrefix + client.ClientCode;
+
+            if (Cache.TryGetValue(key, out ParcelCacheEntry? entry) && entry != null)
+            {
+                var age = DateTime.UtcNow - entry.FetchedAt;
+                if (age < FreshTtl)
+                    return entry.Parcels;
+                if (age < ParcelStaleTtl)
+                {
+                    StartBackgroundRefresh(key,
+                        () => client.NavParcelService!.ReadMultipleParcelsAsync(null, 0),
+                        parcels => new ParcelCacheEntry(parcels, DateTime.UtcNow),
+                        ParcelStaleTtl);
+                    return entry.Parcels;
+                }
+            }
+
+            var gate = Locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync();
+            try
+            {
+                if (Cache.TryGetValue(key, out entry) && entry != null &&
+                    DateTime.UtcNow - entry.FetchedAt < FreshTtl)
+                    return entry.Parcels;
+
+                var parcels = await client.NavParcelService!.ReadMultipleParcelsAsync(null, 0)
+                    ?? Array.Empty<Parcels.Parcel>();
+                Cache.Set(key, new ParcelCacheEntry(parcels, DateTime.UtcNow), ParcelStaleTtl);
+                return parcels;
+            }
+            finally { gate.Release(); }
+        }
+
+        /// <summary>Locations from one shared cache (changes rarely).</summary>
+        private async Task<Loc.Locations[]> GetLocationsCachedAsync()
+        {
+            var client = GetClient();
+            if (client.NavLocationService == null)
+                return Array.Empty<Loc.Locations>();
+
+            var key = LocationsKeyPrefix + client.ClientCode;
+            if (Cache.TryGetValue(key, out LocationCacheEntry? entry) && entry != null)
+                return entry.Locations;
+
+            var gate = Locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync();
+            try
+            {
+                if (Cache.TryGetValue(key, out entry) && entry != null)
+                    return entry.Locations;
+
+                var locations = await client.NavLocationService.ReadMultipleLocationsAsync(null, 0)
+                    ?? Array.Empty<Loc.Locations>();
+                Cache.Set(key, new LocationCacheEntry(locations, DateTime.UtcNow), LocationTtl);
+                return locations;
+            }
+            finally { gate.Release(); }
+        }
+
+        /// <summary>Batch list from one shared cache.</summary>
         private async Task<P_Batches.ParcelBatches[]> GetBatchesAsync()
         {
             var client = GetClient();
             if (client.NavBatchService == null)
                 return Array.Empty<P_Batches.ParcelBatches>();
-            return await client.NavBatchService.ReadMultipleBatchesAsync(null, 0)
-                ?? Array.Empty<P_Batches.ParcelBatches>();
+
+            var key = BatchesKeyPrefix + client.ClientCode;
+            if (Cache.TryGetValue(key, out BatchCacheEntry? entry) && entry != null)
+            {
+                var age = DateTime.UtcNow - entry.FetchedAt;
+                if (age < FreshTtl)
+                    return entry.Batches;
+                if (age < BatchStaleTtl)
+                {
+                    StartBackgroundRefresh(key,
+                        () => client.NavBatchService!.ReadMultipleBatchesAsync(null, 0),
+                        batches => new BatchCacheEntry(batches, DateTime.UtcNow),
+                        BatchStaleTtl);
+                    return entry.Batches;
+                }
+            }
+
+            var gate = Locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync();
+            try
+            {
+                if (Cache.TryGetValue(key, out entry) && entry != null &&
+                    DateTime.UtcNow - entry.FetchedAt < FreshTtl)
+                    return entry.Batches;
+
+                var batches = await client.NavBatchService.ReadMultipleBatchesAsync(null, 0)
+                    ?? Array.Empty<P_Batches.ParcelBatches>();
+                Cache.Set(key, new BatchCacheEntry(batches, DateTime.UtcNow), BatchStaleTtl);
+                return batches;
+            }
+            finally { gate.Release(); }
+        }
+
+        /// <summary>Runs one background refresh per key; failures keep the stale data.</summary>
+        private static void StartBackgroundRefresh<TItem, TEntry>(
+            string key, Func<Task<TItem[]>> fetch, Func<TItem[], TEntry> wrap, TimeSpan ttl)
+        {
+            if (!Refreshing.TryAdd(key, 0))
+                return; // a refresh is already running
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var fresh = await fetch() ?? Array.Empty<TItem>();
+                    Cache.Set(key, wrap(fresh), ttl);
+                }
+                catch { /* keep serving the stale copy */ }
+                finally { Refreshing.TryRemove(key, out _); }
+            });
         }
 
         /// <summary>Summary stats</summary>
@@ -167,9 +298,7 @@ namespace ParcelAPI.Controllers
         {
             try
             {
-                var client = GetClient();
-                var parcels = await client.NavParcelService.ReadMultipleParcelsAsync(null, 0)
-                    ?? Array.Empty<Parcels.Parcel>();
+                var parcels = await GetParcelsCachedAsync();
                 var thirtyDaysAgo = DateTime.Today.AddDays(-30);
 
                 var grouped = parcels
@@ -195,9 +324,7 @@ namespace ParcelAPI.Controllers
         {
             try
             {
-                var client = GetClient();
-                var parcels = await client.NavParcelService.ReadMultipleParcelsAsync(null, 0)
-                    ?? Array.Empty<Parcels.Parcel>();
+                var parcels = await GetParcelsCachedAsync();
 
                 var grouped = parcels
                     .GroupBy(p => p.Payment_Method.ToString())
@@ -299,10 +426,9 @@ namespace ParcelAPI.Controllers
                 // no incoming parcels yet (e.g. a newly added location).
                 try
                 {
-                    var client = GetClient();
-                    if (client.NavLocationService != null)
+                    var navLocations = await GetLocationsCachedAsync();
+                    if (navLocations.Length > 0)
                     {
-                        var navLocations = await client.NavLocationService.ReadMultipleLocationsAsync(null, 0);
                         var known = new HashSet<string>(
                             grouped.Select(g => (g.location ?? string.Empty).Trim()),
                             StringComparer.OrdinalIgnoreCase);
@@ -375,12 +501,7 @@ namespace ParcelAPI.Controllers
         {
             try
             {
-                var client = GetClient();
-                if (client.NavBatchService == null)
-                    return Ok(new Results<object[]> { Code = 0, Contents = Array.Empty<object>() });
-
-                var batches = await client.NavBatchService.ReadMultipleBatchesAsync(null, 0)
-                    ?? Array.Empty<P_Batches.ParcelBatches>();
+                var batches = await GetBatchesAsync();
 
                 var grouped = batches
                     .GroupBy(b => b.Status.ToString())
@@ -404,9 +525,7 @@ namespace ParcelAPI.Controllers
         {
             try
             {
-                var client = GetClient();
-                var parcels = await client.NavParcelService.ReadMultipleParcelsAsync(null, 0)
-                    ?? Array.Empty<Parcels.Parcel>();
+                var parcels = await GetParcelsCachedAsync();
 
                 var grouped = parcels
                     .GroupBy(p => p.Who_to_Pay.ToString())
@@ -429,9 +548,7 @@ namespace ParcelAPI.Controllers
         {
             try
             {
-                var client = GetClient();
-                var parcels = await client.NavParcelService.ReadMultipleParcelsAsync(null, 0)
-                    ?? Array.Empty<Parcels.Parcel>();
+                var parcels = await GetParcelsCachedAsync();
 
                 var paid = parcels.Count(p => p.Paid == true);
                 var unpaid = parcels.Length - paid;
@@ -460,9 +577,7 @@ namespace ParcelAPI.Controllers
         {
             try
             {
-                var client = GetClient();
-                var parcels = await client.NavParcelService.ReadMultipleParcelsAsync(null, 0)
-                    ?? Array.Empty<Parcels.Parcel>();
+                var parcels = await GetParcelsCachedAsync();
 
                 var recent = parcels
                     .OrderByDescending(p => p.Date_sent)

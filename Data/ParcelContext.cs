@@ -13,6 +13,9 @@ namespace ParcelAPI.Data
         public DbSet<Client> Clients { get; set; }
         public DbSet<MpesaStkStatus> MpesaStkStatuses { get; set; }
         public DbSet<EtimsSettings> EtimsSettings { get; set; }
+        public DbSet<Marketer> Marketers { get; set; }
+        public DbSet<MarketerClient> MarketerClients { get; set; }
+        public DbSet<MarketerPayout> MarketerPayouts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -56,6 +59,44 @@ namespace ParcelAPI.Data
                 entity.HasIndex(e => e.ClientCode);
             });
 
+            modelBuilder.Entity<Marketer>(entity =>
+            {
+                entity.ToTable("ParcelMarketers");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Name).HasMaxLength(150).IsRequired();
+                entity.Property(e => e.Phone).HasMaxLength(30);
+                entity.Property(e => e.Type).HasMaxLength(20);
+                entity.Property(e => e.PerParcelRate).HasPrecision(18, 2);
+                entity.Property(e => e.ReferralFee).HasPrecision(18, 2);
+                entity.HasIndex(e => e.Code).IsUnique();
+            });
+
+            modelBuilder.Entity<MarketerClient>(entity =>
+            {
+                entity.ToTable("ParcelMarketerClients");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.MarketerCode).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.ClientCode).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Type).HasMaxLength(20);
+                entity.Property(e => e.Notes).HasMaxLength(500);
+                entity.HasIndex(e => e.MarketerCode);
+                entity.HasIndex(e => e.ClientCode);
+            });
+
+            modelBuilder.Entity<MarketerPayout>(entity =>
+            {
+                entity.ToTable("ParcelMarketerPayouts");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.MarketerCode).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.ClientCode).HasMaxLength(50);
+                entity.Property(e => e.Period).HasMaxLength(20);
+                entity.Property(e => e.Kind).HasMaxLength(30);
+                entity.Property(e => e.Amount).HasPrecision(18, 2);
+                entity.Property(e => e.Status).HasMaxLength(20);
+                entity.Property(e => e.Notes).HasMaxLength(500);
+                entity.HasIndex(e => new { e.MarketerCode, e.Period });
+            });
 
         }
     }

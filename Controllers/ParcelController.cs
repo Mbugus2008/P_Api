@@ -50,13 +50,22 @@ namespace ParcelAPI.Controllers
                         new() { Field = Parcels.Parcel_Fields.Locs, Criteria = $"*{loc}*" }
                     };
 
-                    // Incremental sync: only get parcels updated since last pull
+                    // Incremental sync: only get parcels updated since last pull.
                     if (request?.LastSyncedAt != null)
                     {
+                        // Marker-less values are treated as UTC instead of
+                        // server-local time: this server runs on US Pacific
+                        // time and older app builds sent local timestamps
+                        // without an offset, which pushed the cutoff hours
+                        // ahead and silently skipped updates.
+                        var lastSynced = request.LastSyncedAt.Value;
+                        var cutoffUtc = lastSynced.Kind == DateTimeKind.Unspecified
+                            ? DateTime.SpecifyKind(lastSynced, DateTimeKind.Utc)
+                            : lastSynced.ToUniversalTime();
                         syncFilters.Add(new Parcels.Parcel_Filter
                         {
                             Field = Parcels.Parcel_Fields.Last_Updated,
-                            Criteria = $"{request.LastSyncedAt.Value.ToUniversalTime():MM/dd/yy hh:mm:ss tt}.."
+                            Criteria = $"{cutoffUtc:MM/dd/yy hh:mm:ss tt}.."
                         });
                     }
 

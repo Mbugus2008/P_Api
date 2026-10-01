@@ -31,7 +31,13 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableDateTimeConverter());
+        // Accepts both "Received_Date_Time" and the legacy "Received_DateTime"
+        // spellings on batch create/update, so older app builds persist their
+        // dispatch/receive timestamps too.
+        options.JsonSerializerOptions.Converters.Add(new NavBatchJsonConverter());
     });
+// Gzip/brotli responses: a big help for the dashboard's many JSON calls.
+builder.Services.AddResponseCompression(options => { options.EnableForHttps = true; });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -104,9 +110,61 @@ using (var scope = app.Services.CreateScope())
         try { db.Database.ExecuteSqlRaw(@"ALTER TABLE EtimsSettings ADD LastInvoiceNo INT DEFAULT 0"); } catch { }
     }
     catch { /* table may already exist */ }
+
+    // Ensure marketer / billing tables exist
+    try
+    {
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ParcelMarketers')
+            CREATE TABLE ParcelMarketers (
+                Id INT IDENTITY(1,1) PRIMARY KEY,
+                Code NVARCHAR(50) NOT NULL,
+                Name NVARCHAR(150) NOT NULL,
+                Phone NVARCHAR(30) NULL,
+                Type NVARCHAR(20) NOT NULL DEFAULT 'Partner',
+                PerParcelRate DECIMAL(18,2) NOT NULL DEFAULT 5,
+                ReferralFee DECIMAL(18,2) NOT NULL DEFAULT 5000,
+                Active BIT NOT NULL DEFAULT 1,
+                CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+            )");
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ParcelMarketerClients')
+            CREATE TABLE ParcelMarketerClients (
+                Id INT IDENTITY(1,1) PRIMARY KEY,
+                MarketerCode NVARCHAR(50) NOT NULL,
+                ClientCode NVARCHAR(50) NOT NULL,
+                Type NVARCHAR(20) NOT NULL DEFAULT 'Partner',
+                StartedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                EndedAt DATETIME2 NULL,
+                Notes NVARCHAR(500) NULL
+            )");
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ParcelMarketerPayouts')
+            CREATE TABLE ParcelMarketerPayouts (
+                Id INT IDENTITY(1,1) PRIMARY KEY,
+                MarketerCode NVARCHAR(50) NOT NULL,
+                ClientCode NVARCHAR(50) NULL,
+                Period NVARCHAR(20) NOT NULL DEFAULT '',
+                Kind NVARCHAR(30) NOT NULL DEFAULT 'ParcelCommission',
+                ParcelCount INT NOT NULL DEFAULT 0,
+                Amount DECIMAL(18,2) NOT NULL DEFAULT 0,
+                Status NVARCHAR(20) NOT NULL DEFAULT 'Pending',
+                PaidAt DATETIME2 NULL,
+                Notes NVARCHAR(500) NULL,
+                CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+            )");
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ParcelMarketers_Code')
+            CREATE UNIQUE INDEX IX_ParcelMarketers_Code ON ParcelMarketers (Code)");
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ParcelMarketerPayouts_Marketer_Period')
+            CREATE INDEX IX_ParcelMarketerPayouts_Marketer_Period ON ParcelMarketerPayouts (MarketerCode, Period)");
+    }
+    catch { /* tables may already exist */ }
 }
 
 // Configure the HTTP request pipeline
+app.UseResponseCompression();
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -122,7 +180,10 @@ if (System.IO.Directory.Exists(parcelAppPath))
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(parcelAppPath),
-        RequestPath = "/ParcelApp"
+        RequestPath = "/ParcelApp",
+        // Without this provider the .apk extension has no known content type
+        // and the static file middleware answers 404 for the APK download.
+        ContentTypeProvider = provider
     });
 }
 app.UseCors("AllowAll");
