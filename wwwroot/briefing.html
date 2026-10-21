@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parcel Briefing</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#f2f5fb;color:#1a1a2e;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid #e7ebf3;position:sticky;top:0;z-index:100}
+.brand{font-weight:800;letter-spacing:-0.3px;font-size:1.05rem}
+main{max-width:680px}
+.headline{font-size:1.3rem;font-weight:800;letter-spacing:-0.3px;line-height:1.5}
+.headline b{color:#4e73df}
+.headline .hl-money{color:#16a34a}
+.chip{border:1px solid #d7ddea;background:#fff;border-radius:50px;padding:5px 15px;font-size:0.82rem;font-weight:600;color:#495057;cursor:pointer;transition:all .15s}
+.chip:hover{border-color:#4e73df;color:#4e73df}
+.chip.active{background:#4e73df;border-color:#4e73df;color:#fff}
+.big-card{background:#fff;border-radius:20px;box-shadow:0 6px 24px rgba(26,42,84,0.06);padding:1.05rem 1.25rem;height:100%}
+.big-card .label{font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:#8a93a6}
+.big-card .label span{font-weight:600;letter-spacing:0;text-transform:none;color:#b6bdcc}
+.big-card .value{font-size:2.15rem;font-weight:900;letter-spacing:-1px;line-height:1.2}
+.big-card.hero .value{color:#16a34a}
+.big-card .sub{font-size:0.82rem;color:#8a93a6;font-weight:500}
+.big-card .delta{font-size:0.82rem;font-weight:700;margin-top:2px}
+.delta.up{color:#16a34a}
+.delta.down{color:#e74a3b}
+.delta.flat{color:#b6bdcc;font-weight:600}
+.attention{background:#fff;border-radius:20px;box-shadow:0 6px 24px rgba(26,42,84,0.06);overflow:hidden}
+.att-row{display:flex;gap:12px;align-items:flex-start;padding:14px 18px;border-bottom:1px solid #f0f3f8}
+.att-row:last-child{border-bottom:0}
+.att-row.all-clear{background:#f0fdf6}
+.dot{width:12px;height:12px;border-radius:50%;flex:0 0 12px;margin-top:6px}
+.att-text{font-size:0.95rem;font-weight:700;line-height:1.35}
+.att-sub{font-size:0.8rem;color:#8a93a6;margin-top:1px}
+.section-title{font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#8a93a6}
+.loc-chip{background:#fff;border:1px solid #e7ebf3;border-radius:14px;padding:8px 14px;font-size:0.85rem;font-weight:600}
+.loc-chip b{color:#4e73df;margin-left:4px}
+footer .full-link{color:#4e73df;font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="container d-flex align-items-center gap-2 py-2" style="max-width:680px">
+    <span class="brand"><i class="bi bi-box-seam text-primary"></i> Parcel Briefing</span>
+    <div class="ms-auto d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" id="btnRefresh" onclick="loadBriefing()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="shareBriefing()" title="Share as image"><i class="bi bi-share"></i></button>
+    </div>
+  </div>
+  <div class="container pb-2 d-flex gap-2 flex-wrap" style="max-width:680px">
+    <button class="chip active" data-range="today" onclick="setRange('today')">Today</button>
+    <button class="chip" data-range="yesterday" onclick="setRange('yesterday')">Yesterday</button>
+    <button class="chip" data-range="week" onclick="setRange('week')">Last 7 days</button>
+    <button class="chip" data-range="month" onclick="setRange('month')">Last 30 days</button>
+  </div>
+</div>
+
+<main class="container py-4" style="max-width:680px" id="briefingMain">
+  <div class="headline mb-4" id="headline">Loading&hellip;</div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="big-card hero">
+        <div class="label"><i class="bi bi-cash-coin me-1"></i>Money collected <span id="pA"></span></div>
+        <div class="value" id="moneyValue">&mdash;</div>
+        <div class="sub mt-1" id="moneySplit"></div>
+        <div id="moneyDelta"></div>
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="big-card">
+        <div class="label"><i class="bi bi-box-seam me-1"></i>Parcels sent <span id="pB"></span></div>
+        <div class="value" id="sentValue">&mdash;</div>
+        <div id="sentDelta"></div>
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="big-card">
+        <div class="label"><i class="bi bi-bag-check me-1"></i>Picked up <span id="pC"></span></div>
+        <div class="value" id="pickedValue">&mdash;</div>
+        <div id="pickedDelta"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title mb-2"><i class="bi bi-bell me-1"></i>Needs your attention</div>
+  <div class="attention mb-4" id="attention"><div class="att-row"><div class="dot" style="background:#d7ddea"></div><div><div class="att-text">Checking&hellip;</div></div></div></div>
+
+  <div id="whereWrap" class="mb-4 d-none">
+    <div class="section-title mb-2"><i class="bi bi-geo-alt me-1"></i>Waiting to be picked up at</div>
+    <div class="d-flex flex-wrap gap-2" id="whereList"></div>
+  </div>
+
+  <div class="text-center text-muted" style="font-size:0.78rem" id="metaLine">
+    Updated <span id="updatedAt">&mdash;</span> &middot; refreshes automatically every 5 minutes
+  </div>
+</main>
+
+<footer class="container text-center pb-5" style="max-width:680px">
+  <a class="full-link" id="fullLink" href="dashboard.html">See the full dashboard <i class="bi bi-arrow-right"></i></a>
+</footer>
+
+<script>
+const API = (() => {
+  const u = new URLSearchParams(location.search);
+  let clientId = '';
+  const encoded = u.get('c');
+  if (encoded) { try { clientId = atob(encoded); } catch(_) { clientId = ''; } }
+  if (!clientId && u.get('client')) clientId = u.get('client');
+  function headers() { const h = {}; if (clientId) h['X-Client-Identifier'] = clientId; return h; }
+  async function get(path, params) {
+    const q = params ? '?' + new URLSearchParams(params).toString() : '';
+    const r = await fetch('/api/dashboard/' + path + q, { headers: headers() });
+    if (!r.ok) throw new Error(path + ': ' + r.status);
+    const j = await r.json();
+    return j.contents || j;
+  }
+  return { get, clientId: () => clientId, setClientId: (id) => { clientId = id; } };
+})();
+
+let rangeKey = 'today';
+let locationNames = {};
+let locationNamesLoaded = false;
+
+function fmtDate(d) { return d.toISOString().split('T')[0]; }
+function kes(num) { const n = Number(num || 0); return 'KES ' + n.toLocaleString(undefined, {maximumFractionDigits: 0}); }
+function fmtNum(num) { return Number(num || 0).toLocaleString(undefined, {maximumFractionDigits: 0}); }
+function parcels(n) { return n + ' parcel' + (n === 1 ? '' : 's'); }
+
+function rangeParams() {
+  const u = new URLSearchParams(location.search);
+  const uf = u.get('from'), ut = u.get('to');
+  if (uf || ut) {
+    const f = uf || ut, t = ut || uf;
+    return { key: 'custom', from: f, to: t, label: f === t ? f : 'Selected period', vsLabel: 'the previous period' };
+  }
+  const today = new Date();
+  const t = fmtDate(today);
+  if (rangeKey === 'yesterday') {
+    const y = new Date(today); y.setDate(y.getDate() - 1); const yy = fmtDate(y);
+    return { key: 'yesterday', from: yy, to: yy, label: 'Yesterday', vsLabel: 'the day before' };
+  }
+  if (rangeKey === 'week') {
+    const s = new Date(today); s.setDate(s.getDate() - 6);
+    return { key: 'week', from: fmtDate(s), to: t, label: 'Last 7 days', vsLabel: 'the previous 7 days' };
+  }
+  if (rangeKey === 'month') {
+    const s = new Date(today); s.setDate(s.getDate() - 29);
+    return { key: 'month', from: fmtDate(s), to: t, label: 'Last 30 days', vsLabel: 'the previous 30 days' };
+  }
+  return { key: 'today', from: t, to: t, label: 'Today', vsLabel: 'yesterday' };
+}
+
+function setRange(key) {
+  rangeKey = key;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.range === key));
+  loadBriefing();
+}
+
+function deltaHtml(cur, prev, fmt, vsLabel) {
+  if (cur === 0 && prev === 0) return '<span class="delta flat">No change vs ' + vsLabel + '</span>';
+  const diff = cur - prev;
+  if (diff === 0) return '<span class="delta flat">Same as ' + vsLabel + '</span>';
+  const cls = diff > 0 ? 'up' : 'down';
+  const sign = diff > 0 ? '\u2191 +' : '\u2193 \u2212';
+  return '<span class="delta ' + cls + '">' + sign + fmt(Math.abs(diff)) + ' vs ' + vsLabel + '</span>';
+}
+
+function buildHeadline(d, rp) {
+  const s = d.selected, c = d.current;
+  const nothing = s.sent === 0 && s.pickedUp === 0 && s.moneyCollected === 0 && s.paymentsCount === 0;
+  if (nothing && c.waitingPickup === 0) return 'Nothing recorded for ' + rp.label.toLowerCase() + ' yet.';
+  const parts = [];
+  parts.push(s.sent > 0 ? '<b>' + s.sent + '</b> ' + (s.sent === 1 ? 'parcel' : 'parcels') + ' sent' : 'no parcels sent');
+  parts.push(s.moneyCollected > 0 ? '<span class="hl-money">' + kes(s.moneyCollected) + '</span> collected' : 'KES 0 collected');
+  if (s.pickedUp > 0) parts.push('<b>' + s.pickedUp + '</b> picked up');
+  let text = (rp.key === 'today' ? 'Today so far: ' : rp.label + ': ') + parts.join(' \u00b7 ');
+  if (c.waitingPickup > 0) text += ' \u00b7 <b>' + c.waitingPickup + '</b> waiting to be picked up';
+  return text;
+}
+
+function renderAttention(c) {
+  const rows = [];
+  const row = (color, text, sub) =>
+    '<div class="att-row"><div class="dot" style="background:' + color + '"></div><div><div class="att-text">' + text + '</div>' + (sub ? '<div class="att-sub">' + sub + '</div>' : '') + '</div></div>';
+
+  if (c.stuck > 0) rows.push(row('#e74a3b',
+    c.stuck + ' ' + (c.stuck === 1 ? 'parcel has' : 'parcels have') + ' been on the road for 2+ days',
+    'Check with the drivers or the receiving branch.'));
+  if (c.unpaidCount > 0) rows.push(row('#f6c23e',
+    kes(c.unpaidAmount) + ' still not collected from customers',
+    parcels(c.unpaidCount) + ' not paid yet.'));
+  if (c.waitingOlder > 0) rows.push(row('#f6c23e',
+    parcels(c.waitingOlder) + ' sent earlier ' + (c.waitingOlder === 1 ? 'is' : 'are') + ' still waiting for pickup',
+    'Remind the customers to come and collect them.'));
+  if (c.waitingPickup > 0 && c.waitingOlder === 0 && c.stuck === 0 && c.unpaidCount === 0) rows.push(row('#4e73df',
+    parcels(c.waitingPickup) + ' ' + (c.waitingPickup === 1 ? 'is' : 'are') + ' waiting to be picked up',
+    'Normal for the day — no reminders needed yet.'));
+
+  if (!rows.length) {
+    rows.push('<div class="att-row all-clear"><div class="dot" style="background:#16a34a"></div><div><div class="att-text" style="color:#16a34a"><i class="bi bi-check-circle-fill me-1"></i>All clear!</div><div class="att-sub">Nothing needs attention right now.</div></div></div>');
+  }
+  document.getElementById('attention').innerHTML = rows.join('');
+}
+
+function renderWhere(c) {
+  const wrap = document.getElementById('whereWrap');
+  const list = document.getElementById('whereList');
+  if (!c.waitingByLocation || !c.waitingByLocation.length) { wrap.classList.add('d-none'); return; }
+  list.innerHTML = c.waitingByLocation
+    .map(x => '<span class="loc-chip">' + (locationNames[x.location] || x.location) + '<b>' + x.count + '</b></span>')
+    .join('');
+  wrap.classList.remove('d-none');
+}
+
+async function loadBriefing() {
+  const btn = document.getElementById('btnRefresh');
+  const icon = btn ? btn.querySelector('i') : null;
+  if (icon) icon.className = 'bi bi-arrow-clockwise pulse';
+  if (btn) btn.disabled = true;
+
+  const rp = rangeParams();
+  try {
+    if (!API.clientId()) {
+      try { const cl = await API.get('clients'); if (cl && cl.length) API.setClientId(cl[0].clientCode); } catch (_) {}
+    }
+    if (!locationNamesLoaded) {
+      try {
+        const locs = await API.get('locations');
+        locs.forEach(l => { locationNames[l.code] = l.name; });
+        locationNamesLoaded = true;
+      } catch (_) {}
+    }
+
+    const d = await API.get('briefing', { from: rp.from, to: rp.to });
+    const s = d.selected, p = d.previous, c = d.current;
+
+    document.getElementById('headline').innerHTML = buildHeadline(d, rp);
+
+    document.getElementById('pA').textContent = '(' + rp.label + ')';
+    document.getElementById('pB').textContent = '(' + rp.label + ')';
+    document.getElementById('pC').textContent = '(' + rp.label + ')';
+
+    document.getElementById('moneyValue').textContent = kes(s.moneyCollected);
+    document.getElementById('moneySplit').textContent = s.paymentsCount > 0
+      ? 'Cash ' + kes(s.cash) + ' \u00b7 M-Pesa ' + kes(s.mpesa) + ' \u00b7 ' + s.paymentsCount + ' payments'
+      : 'No payments received in this period';
+    document.getElementById('moneyDelta').innerHTML = deltaHtml(s.moneyCollected, p.moneyCollected, kes, rp.vsLabel);
+
+    document.getElementById('sentValue').textContent = fmtNum(s.sent);
+    document.getElementById('sentDelta').innerHTML = deltaHtml(s.sent, p.sent, fmtNum, rp.vsLabel);
+
+    document.getElementById('pickedValue').textContent = fmtNum(s.pickedUp);
+    document.getElementById('pickedDelta').innerHTML = deltaHtml(s.pickedUp, p.pickedUp, fmtNum, rp.vsLabel);
+
+    renderAttention(c);
+    renderWhere(c);
+
+    document.getElementById('updatedAt').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    const rangeText = d.from + (d.to !== d.from ? ' \u2013 ' + d.to : '');
+    const paren = (rangeText === rp.label) ? '' : ' (' + rangeText + ')';
+    document.getElementById('metaLine').innerHTML =
+      'Showing <b>' + rp.label + '</b>' + paren + ' &middot; updated ' +
+      '<span id="updatedAt">' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + '</span> &middot; refreshes every 5 minutes';
+
+    const link = document.getElementById('fullLink');
+    link.href = 'dashboard.html' + (API.clientId() ? '?c=' + encodeURIComponent(btoa(API.clientId())) : '');
+  } catch (e) {
+    console.error('briefing', e);
+    document.getElementById('headline').innerHTML = '&#9888;&#65039; Could not load the briefing. Tap refresh to try again.';
+  }
+  if (icon) icon.className = 'bi bi-arrow-clockwise';
+  if (btn) btn.disabled = false;
+}
+
+async function shareBriefing() {
+  const btn = event && event.currentTarget;
+  try {
+    const canvas = await html2canvas(document.getElementById('briefingMain'), { backgroundColor: '#f2f5fb', scale: 2 });
+    canvas.toBlob(async blob => {
+      const file = new File([blob], 'parcel-briefing.png', {type: 'image/png'});
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'Parcel Briefing' }); } catch (_) {}
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'parcel-briefing.png'; a.click();
+        URL.revokeObjectURL(url);
+      }
+    }, 'image/png');
+  } catch (e) { console.error('share', e); }
+}
+
+loadBriefing();
+if (rangeParams().key === 'custom') document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+setInterval(loadBriefing, 300000);
+</script>
+</body>
+</html>

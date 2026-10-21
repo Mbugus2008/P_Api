@@ -7,6 +7,7 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -110,6 +111,27 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- SECTION: Users (per-user activity) -->
+  <div class="row g-3 mb-2">
+    <div class="col-12"><span class="badge fs-6 fw-bold" style="background:#6f42c11a;color:#6f42c1;padding:8px 16px;border-radius:10px"><i class="bi bi-people-fill me-1"></i>Users</span></div>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-person-plus-fill" style="color:#4e73df"></i>Parcels Created by User <small class="text-muted fw-normal" style="font-size:0.65rem">Top 15 · click for details</small></h5>
+      <div class="chart-container-sm position-relative"><div id="lUserCreated" class="loading-overlay d-none"><div class="spinner-border pulse" style="color:#4e73df"></div></div><canvas id="chartUserCreated"></canvas></div>
+    </div></div></div>
+    <div class="col-lg-6"><div class="card h-100"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-cash-coin text-success"></i>Payments Received by User <small class="text-muted fw-normal" style="font-size:0.65rem">Top 15 · Cash vs M-Pesa · click for details</small></h5>
+      <div class="chart-container-sm position-relative"><div id="lUserPay" class="loading-overlay d-none"><div class="spinner-border text-success pulse"></div></div><canvas id="chartUserPayments"></canvas></div>
+    </div></div></div>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-12"><div class="card"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-person-lines-fill" style="color:#6f42c1"></i>User Activity <small class="text-muted fw-normal" style="font-size:0.65rem">created parcels, revenue & payments received · click a row for details</small> <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="exportUsersCSV()"><i class="bi bi-download me-1"></i>Export CSV</button></h5>
+      <div id="userActivityTable" class="text-center text-muted py-3">Loading...</div>
+    </div></div></div>
   </div>
 
   <!-- ROW 1: Revenue Charts -->
@@ -418,6 +440,135 @@ async function loadBatches() {
   hideLoading('lBatch');
 }
 
+// ============ Users (per-user activity) ============
+let userActivityData = [];
+
+function userLabel(u) { return (u.name && u.name !== u.user) ? u.name + ' (' + u.user + ')' : u.user; }
+
+async function loadUserActivity() {
+  showLoading('lUserCreated'); showLoading('lUserPay');
+  try {
+    const d = await API.get('user-activity');
+    userActivityData = d || [];
+    renderUserCharts(userActivityData);
+    renderUserTable(userActivityData);
+  } catch(e) {
+    console.error('user-activity', e);
+    const c = document.getElementById('userActivityTable');
+    if (c) c.innerHTML = '<div class="text-muted py-3">Failed to load users</div>';
+  }
+  hideLoading('lUserCreated'); hideLoading('lUserPay');
+}
+
+function renderUserCharts(d) {
+  const t = chartTheme();
+
+  // Parcels created per user (top 15)
+  destroyChart('chartUserCreated');
+  const createdTop = d.filter(x => x.created > 0).sort((a,b) => b.created - a.created).slice(0, 15);
+  if (createdTop.length) {
+    const ctx = document.getElementById('chartUserCreated').getContext('2d');
+    charts.chartUserCreated = new Chart(ctx, { type: 'bar', data: {
+      labels: createdTop.map(userLabel), datasets: [{ label: 'Created', data: createdTop.map(x => x.created), backgroundColor: createdTop.map((_,i) => colors[i%colors.length]+'CC'), borderRadius: 8 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + ' parcels \u00b7 ' + kes(createdTop[c.dataIndex].revenue) + ' revenue' } } },
+        scales: { x: { grid: { color: t.gridColor }, ticks: { color: t.color, precision: 0 }, beginAtZero: true }, y: { grid: { display: false }, ticks: { color: t.color } } },
+        onClick: (_, el) => { if (el.length) showUserDetail(userActivityData.indexOf(createdTop[el[0].index])); }
+      }
+    });
+  }
+
+  // Payments received per user (top 15, cash vs mpesa stacked)
+  destroyChart('chartUserPayments');
+  const payTop = d.filter(x => x.received > 0).sort((a,b) => b.received - a.received).slice(0, 15);
+  if (payTop.length) {
+    const ctx = document.getElementById('chartUserPayments').getContext('2d');
+    charts.chartUserPayments = new Chart(ctx, { type: 'bar', data: {
+      labels: payTop.map(userLabel),
+      datasets: [
+        { label: 'Cash', data: payTop.map(x => x.cash), backgroundColor: '#1cc88aCC', borderRadius: 6 },
+        { label: 'M-Pesa', data: payTop.map(x => x.mpesa), backgroundColor: '#4e73dfCC', borderRadius: 6 }
+      ] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { datalabels: { display: false },
+          legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true } },
+          tooltip: { callbacks: { label: c => c.dataset.label + ': ' + kes(c.raw) } } },
+        scales: { x: { stacked: true, grid: { color: t.gridColor }, ticks: { color: t.color, callback: v => k(v) }, beginAtZero: true }, y: { stacked: true, grid: { display: false }, ticks: { color: t.color } } },
+        onClick: (_, el) => { if (el.length) showUserDetail(userActivityData.indexOf(payTop[el[0].index])); }
+      }
+    });
+  }
+}
+
+function renderUserTable(d) {
+  const container = document.getElementById('userActivityTable');
+  if (!container) return;
+  if (!d || !d.length) { container.innerHTML = '<div class="text-muted py-3">No users found for this date range.</div>'; return; }
+
+  const chip = (label, count, color) => (!count)
+    ? '<span class="badge bg-light text-muted border" title="' + label + '">0</span>'
+    : '<span class="badge" style="background:' + color + '15;color:' + color + ';border:1px solid ' + color + '44" title="' + label + '">' + count + '</span>';
+
+  let html = '<table class="table table-sm table-hover align-middle mb-0" style="font-size:0.82rem">';
+  html += '<thead><tr>'
+    + '<th class="text-start">User</th>'
+    + '<th class="text-end">Created</th>'
+    + '<th class="text-end">Revenue</th>'
+    + '<th class="text-center">Open \u00b7 Transit \u00b7 Waiting \u00b7 Collected</th>'
+    + '<th class="text-end">Received</th>'
+    + '<th class="text-end">Cash</th>'
+    + '<th class="text-end">M-Pesa</th>'
+    + '</tr></thead><tbody>';
+  d.forEach((u, i) => {
+    const idle = !u.created && !u.receivedCount;
+    html += '<tr role="button" class="' + (idle ? 'text-muted' : '') + '" onclick="showUserDetail(' + i + ')">';
+    html += '<td class="text-start"><span class="fw-semibold">' + u.name + '</span>' + (u.name !== u.user ? ' <small class="text-muted">' + u.user + '</small>' : '') + (u.location ? '<div class="text-muted" style="font-size:0.7rem">' + u.location + '</div>' : '') + '</td>';
+    html += '<td class="text-end fw-bold">' + u.created + '</td>';
+    html += '<td class="text-end">' + kes(u.revenue) + '</td>';
+    html += '<td class="text-center text-nowrap"><span class="d-inline-flex gap-1">' + chip('Open', u.open, '#e74a3b') + chip('In Transit', u.inTransit, '#d4a017') + chip('Waiting Collection', u.waiting, '#36b9cc') + chip('Collected', u.collected, '#1cc88a') + '</span></td>';
+    html += '<td class="text-end fw-bold">' + kes(u.received) + (u.receivedCount ? '<div class="text-muted fw-normal" style="font-size:0.7rem">' + u.receivedCount + ' payments</div>' : '') + '</td>';
+    html += '<td class="text-end">' + kes(u.cash) + '</td>';
+    html += '<td class="text-end">' + kes(u.mpesa) + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function showUserDetail(idx) {
+  const u = userActivityData[idx];
+  if (!u) return;
+  const unpaid = (u.revenue || 0) - (u.paidRevenue || 0);
+  const body =
+    '<div class="row g-2">' +
+      '<div class="col-6"><div class="p-2 rounded" style="background:#4e73df10"><small class="text-muted d-block">Parcels Created</small><b>' + u.created + '</b></div></div>' +
+      '<div class="col-6"><div class="p-2 rounded" style="background:#1cc88a10"><small class="text-muted d-block">Revenue (fees)</small><b>' + kes(u.revenue) + '</b><div class="text-muted" style="font-size:0.72rem">paid ' + kes(u.paidRevenue) + ' \u00b7 unpaid ' + kes(unpaid) + '</div></div></div>' +
+      '<div class="col-6"><div class="p-2 rounded" style="background:#36b9cc10"><small class="text-muted d-block">Payments Received</small><b>' + kes(u.received) + '</b><div class="text-muted" style="font-size:0.72rem">' + u.receivedCount + ' payments</div></div></div>' +
+      '<div class="col-6"><div class="p-2 rounded" style="background:#f6c23e10"><small class="text-muted d-block">Cash / M-Pesa</small><b>' + kes(u.cash) + ' / ' + kes(u.mpesa) + '</b></div></div>' +
+      '<div class="col-12"><div class="p-2 rounded" style="background:#6f42c110"><small class="text-muted d-block mb-1">Status of Created Parcels</small>' +
+        '<span class="badge me-1" style="background:#e74a3b20;color:#e74a3b">Open: ' + u.open + '</span>' +
+        '<span class="badge me-1" style="background:#f6c23e30;color:#b8860b">In Transit: ' + u.inTransit + '</span>' +
+        '<span class="badge me-1" style="background:#36b9cc20;color:#36b9cc">Waiting: ' + u.waiting + '</span>' +
+        '<span class="badge" style="background:#1cc88a20;color:#1cc88a">Collected: ' + u.collected + '</span>' +
+      '</div></div>' +
+    '</div>';
+  showDetail(u.name + (u.name !== u.user ? ' \u00b7 ' + u.user : '') + (u.location ? ' \u00b7 ' + u.location : ''), body);
+}
+
+function exportUsersCSV() {
+  if (!userActivityData.length) return;
+  let csv = 'User,Name,Location,Created,Revenue,Paid Revenue,Open,In Transit,Waiting Collection,Collected,Payments Received,Received Count,Cash,M-Pesa\n';
+  userActivityData.forEach(u => {
+    csv += '"' + u.user + '","' + (u.name || '').replace(/"/g, '""') + '","' + (u.location || '') + '",'
+      + u.created + ',' + u.revenue + ',' + u.paidRevenue + ',' + u.open + ',' + u.inTransit + ',' + u.waiting + ',' + u.collected + ','
+      + u.received + ',' + u.receivedCount + ',' + u.cash + ',' + u.mpesa + '\n';
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'user-activity.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function loadClients() {
   try {
     const data = await API.get('clients');
@@ -497,7 +648,7 @@ async function shareDashboard() {
 function exportLocationsCSV() {
   const cards = document.querySelectorAll('#rowLocationCards .card');
   if (!cards.length) return;
-  let csv = 'Location,Total,In Transist,Waiting Collection,Collected (Today/Prev),Previous Uncollected\\n';
+  let csv = 'Location,Total,In Transist,Waiting Collection,Collected (Today/Prev),Previous Uncollected\n';
   cards.forEach(card => {
     const loc = card.querySelector('h6')?.childNodes[1]?.textContent?.trim() || '';
     const total = card.querySelector('.badge.bg-secondary')?.textContent?.trim() || '0';
@@ -519,7 +670,7 @@ function exportLocationsCSV() {
         }
       }
     });
-    csv += `"${loc}",${total},${counts['In Transist']},${counts['Waiting Collection']},${counts['Collected (Today/Prev)']},${counts['Previous Uncollected']}\\n`;
+    csv += `"${loc}",${total},${counts['In Transist']},${counts['Waiting Collection']},${counts['Collected (Today/Prev)']},${counts['Previous Uncollected']}\n`;
   });
   const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
@@ -629,7 +780,7 @@ async function refreshAll() {
     loadParcelsByLocation(), loadParcelsByVehicle(), loadLocationStatus(),
     loadParcelsOverTime(), loadDailyRevenue(),
     loadParcelsByStatus(), loadPaymentMethods(),
-    loadPaidVsUnpaid(), loadBatches()
+    loadPaidVsUnpaid(), loadBatches(), loadUserActivity()
   ]);
   if (btn) btn.disabled = false;
   if (icon) { icon.className = 'bi bi-arrow-clockwise'; }

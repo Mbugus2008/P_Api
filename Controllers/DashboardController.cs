@@ -6,6 +6,7 @@ using ParcelAPI.Data;
 using ParcelAPI.Filters;
 using ParcelAPI.Models;
 using System.Collections.Concurrent;
+using NavUsers = User;
 
 namespace ParcelAPI.Controllers
 {
@@ -28,6 +29,7 @@ namespace ParcelAPI.Controllers
         private const string ParcelsKeyPrefix = "dash-parcels::";
         private const string BatchesKeyPrefix = "dash-batches::";
         private const string LocationsKeyPrefix = "dash-locations::";
+        private const string UsersKeyPrefix = "dash-users::";
         private static readonly MemoryCache Cache = new(new MemoryCacheOptions());
         private static readonly ConcurrentDictionary<string, SemaphoreSlim> Locks = new();
         private static readonly ConcurrentDictionary<string, byte> Refreshing = new();
@@ -38,7 +40,9 @@ namespace ParcelAPI.Controllers
         private sealed record ParcelCacheEntry(Parcels.Parcel[] Parcels, DateTime FetchedAt);
         private sealed record BatchCacheEntry(P_Batches.ParcelBatches[] Batches, DateTime FetchedAt);
         private sealed record LocationCacheEntry(Loc.Locations[] Locations, DateTime FetchedAt);
+        private sealed record UsersCacheEntry(NavUsers.Parcel_Users[] Users, DateTime FetchedAt);
         private static readonly TimeSpan LocationTtl = TimeSpan.FromMinutes(10);
+        private static readonly TimeSpan UsersTtl = TimeSpan.FromMinutes(10);
 
         public DashboardController(ILogger<DashboardController> logger, ParcelContext db)
         {
@@ -159,6 +163,37 @@ namespace ParcelAPI.Controllers
                     ?? Array.Empty<Loc.Locations>();
                 Cache.Set(key, new LocationCacheEntry(locations, DateTime.UtcNow), LocationTtl);
                 return locations;
+            }
+            finally { gate.Release(); }
+        }
+
+        /// <summary>
+        /// NAV parcel users from a short shared cache.
+        /// Parcels only carry agent codes (Created_By / Payment_Received_By);
+        /// this list maps those codes to names and locations for the Users section.
+        /// </summary>
+        private async Task<NavUsers.Parcel_Users[]> GetUsersCachedAsync()
+        {
+            var client = GetClient();
+            if (client.NavUserService == null)
+                return Array.Empty<NavUsers.Parcel_Users>();
+
+            var key = UsersKeyPrefix + client.ClientCode;
+            if (Cache.TryGetValue(key, out UsersCacheEntry? entry) && entry != null)
+                return entry.Users;
+
+            var gate = Locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync();
+            try
+            {
+                if (Cache.TryGetValue(key, out entry) && entry != null)
+                    return entry.Users;
+
+                // Same as the app's nav/users fetch: all users (no account-type filter).
+                var users = await client.NavUserService.ReadMultipleUsersAsync(null, 1000)
+                    ?? Array.Empty<NavUsers.Parcel_Users>();
+                Cache.Set(key, new UsersCacheEntry(users, DateTime.UtcNow), UsersTtl);
+                return users;
             }
             finally { gate.Release(); }
         }
@@ -879,6 +914,211 @@ namespace ParcelAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting analytics");
+                return StatusCode(500, Err(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Per-user (agent) activity for the Users section:
+        ///  - parcels created (Created_By), filtered by Date_sent range
+        ///  - fees/revenue and status breakdown of those created parcels
+        ///  - payments received (Payment_Received_By), grouped by Payment_Date
+        ///    range, with Cash vs M-Pesa split
+        /// One row per configured NAV parcel user plus any agent code seen in data.
+        /// </summary>
+        [HttpGet("user-activity")]
+        [ServiceFilter(typeof(ClientIdentifierFilter))]
+        public async Task<ActionResult<Results<object[]>>> GetUserActivity([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
+        {
+            try
+            {
+                // Created parcels and their statuses/revenue — filtered by Date_sent.
+                var parcels = await GetParcelsAsync(from, to);
+
+                // Payments received — from the full parcel list, but filtered by
+                // Payment_Date so "payments received in range" is accurate even
+                // for parcels sent earlier.
+                var allParcels = await GetParcelsCachedAsync();
+                var receivedParcels = allParcels
+                    .Where(p => p.Paid == true && !string.IsNullOrWhiteSpace(p.Payment_Received_By));
+                if (from.HasValue || to.HasValue)
+                {
+                    // When a range is set, ignore unset NAV "zero" dates (1753-01-01).
+                    receivedParcels = receivedParcels.Where(p =>
+                        p.Payment_Date.Year > 1900 &&
+                        (!from.HasValue || p.Payment_Date.Date >= from.Value.Date) &&
+                        (!to.HasValue || p.Payment_Date.Date <= to.Value.Date));
+                }
+                var receivedList = receivedParcels.ToArray();
+
+                // NAV parcel users → display names + locations (best effort).
+                var navUsers = new Dictionary<string, NavUsers.Parcel_Users>(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    foreach (var u in await GetUsersCachedAsync())
+                    {
+                        var code = u.Agent_Code?.Trim();
+                        if (!string.IsNullOrEmpty(code))
+                            navUsers[code] = u;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not load NAV users for user activity");
+                }
+
+                var createdByUser = parcels
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Created_By))
+                    .GroupBy(p => p.Created_By!.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.ToArray(), StringComparer.OrdinalIgnoreCase);
+
+                var receivedByUser = receivedList
+                    .GroupBy(p => p.Payment_Received_By!.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.ToArray(), StringComparer.OrdinalIgnoreCase);
+
+                // Show every configured user (even idle ones) plus agents found in data.
+                var codes = new HashSet<string>(navUsers.Keys, StringComparer.OrdinalIgnoreCase);
+                codes.UnionWith(createdByUser.Keys);
+                codes.UnionWith(receivedByUser.Keys);
+
+                var result = codes.Select(code =>
+                {
+                    var created = createdByUser.TryGetValue(code, out var c) ? c : Array.Empty<Parcels.Parcel>();
+                    var received = receivedByUser.TryGetValue(code, out var r) ? r : Array.Empty<Parcels.Parcel>();
+                    navUsers.TryGetValue(code, out var navUser);
+
+                    var receivedAmount = received.Sum(p => p.Amount_Paid);
+                    var cash = received
+                        .Where(p => p.Payment_Method == Parcels.Payment_Method.Cash)
+                        .Sum(p => p.Amount_Paid);
+
+                    return new
+                    {
+                        user = code,
+                        name = string.IsNullOrWhiteSpace(navUser?.Name) ? code : navUser!.Name,
+                        location = navUser?.Location ?? string.Empty,
+                        created = created.Length,
+                        revenue = created.Sum(p => p.Amount_Paid),
+                        paidRevenue = created.Where(p => p.Paid == true).Sum(p => p.Amount_Paid),
+                        open = created.Count(p => p.Status == Parcels.Status.Open),
+                        inTransit = created.Count(p => p.Status == Parcels.Status.In_Transist),
+                        waiting = created.Count(p => p.Status == Parcels.Status.Waiting_Collection),
+                        collected = created.Count(p => p.Status == Parcels.Status.Collected),
+                        received = receivedAmount,
+                        receivedCount = received.Length,
+                        cash,
+                        mpesa = receivedAmount - cash
+                    };
+                })
+                .OrderByDescending(x => x.created)
+                .ThenByDescending(x => x.received)
+                .ThenBy(x => x.name, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+                return Ok(new Results<object[]> { Code = 0, Contents = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user activity");
+                return StatusCode(500, Err(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Plain-language daily briefing for the owner page (briefing.html):
+        /// money collected / parcels sent / parcels picked up for the selected
+        /// range plus the equal-length preceding range for comparisons, and
+        /// current-state items that need attention (stuck in transit, unpaid,
+        /// waiting for pickup from earlier). All reads come from the shared
+        /// parcel cache — no extra NAV round trips.
+        /// </summary>
+        [HttpGet("briefing")]
+        [ServiceFilter(typeof(ClientIdentifierFilter))]
+        public async Task<ActionResult<Results<object>>> GetBriefing([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
+        {
+            try
+            {
+                var rangeTo = (to ?? DateTime.Today).Date;
+                var rangeFrom = (from ?? rangeTo).Date;
+                if (rangeFrom > rangeTo) (rangeFrom, rangeTo) = (rangeTo, rangeFrom);
+                var days = (rangeTo - rangeFrom).Days + 1;
+                var prevFrom = rangeFrom.AddDays(-days);
+                var prevTo = rangeFrom.AddDays(-1);
+
+                var parcels = await GetParcelsCachedAsync();
+                var today = DateTime.Today;
+
+                // Money in / parcels sent / parcels picked up for one date window.
+                object Window(DateTime f, DateTime t)
+                {
+                    var payments = parcels.Where(p =>
+                        p.Paid == true &&
+                        p.Payment_Date.Year > 1900 &&
+                        p.Payment_Date.Date >= f && p.Payment_Date.Date <= t).ToArray();
+                    var money = payments.Sum(p => p.Amount_Paid);
+                    var cash = payments
+                        .Where(p => p.Payment_Method == Parcels.Payment_Method.Cash)
+                        .Sum(p => p.Amount_Paid);
+
+                    var sent = parcels.Count(p => p.Date_sent.Year > 1900 && p.Date_sent.Date >= f && p.Date_sent.Date <= t);
+                    var pickedUp = parcels.Count(p =>
+                        p.Status == Parcels.Status.Collected &&
+                        p.Date_Collected.Year > 1900 &&
+                        p.Date_Collected.Date >= f && p.Date_Collected.Date <= t);
+
+                    return new
+                    {
+                        moneyCollected = money,
+                        paymentsCount = payments.Length,
+                        cash,
+                        mpesa = money - cash,
+                        sent,
+                        pickedUp
+                    };
+                }
+
+                var selected = Window(rangeFrom, rangeTo);
+                var previous = Window(prevFrom, prevTo);
+
+                // Current state (not window-bound): what's on the road / waiting / unpaid.
+                var waiting = parcels.Where(p => p.Status == Parcels.Status.Waiting_Collection).ToArray();
+                var onRoad = parcels.Where(p => p.Status == Parcels.Status.In_Transist).ToArray();
+                var stuck = onRoad.Where(p => p.Date_sent.Year > 1900 && p.Date_sent.Date <= today.AddDays(-2)).ToArray();
+                var unpaid = parcels.Where(p => p.Paid == false).ToArray();
+
+                var waitingByLocation = waiting
+                    .GroupBy(p => string.IsNullOrWhiteSpace(p.To) ? "Unknown" : p.To!.Trim())
+                    .Select(g => new { location = g.Key, count = g.Count() })
+                    .OrderByDescending(x => x.count)
+                    .Take(6)
+                    .ToArray();
+
+                return Ok(new Results<object>
+                {
+                    Code = 0,
+                    Contents = new
+                    {
+                        from = rangeFrom.ToString("yyyy-MM-dd"),
+                        to = rangeTo.ToString("yyyy-MM-dd"),
+                        days,
+                        selected,
+                        previous,
+                        current = new
+                        {
+                            waitingPickup = waiting.Length,
+                            waitingOlder = waiting.Count(p => p.Date_sent.Year > 1900 && p.Date_sent.Date < rangeFrom),
+                            onTheRoad = onRoad.Length,
+                            stuck = stuck.Length,
+                            unpaidCount = unpaid.Length,
+                            unpaidAmount = unpaid.Sum(p => p.Amount_Paid),
+                            waitingByLocation
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting briefing");
                 return StatusCode(500, Err(ex.Message));
             }
         }
