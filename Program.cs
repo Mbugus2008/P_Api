@@ -65,6 +65,9 @@ builder.Services.AddScoped<IEtimsService, EtimsService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
+// Keeps the dashboard caches warm so nobody pays the ~50s cold NAV read.
+builder.Services.AddHostedService<DashboardCacheWarmer>();
+
 // Add CORS
 builder.Services.AddCors(options =>
 {

@@ -21,7 +21,7 @@ param(
     [string]$PublishPath = "D:\Projects2\Parcel\ParcelAPI\publish",
     [string]$ApkPath = "D:\Projects2\Parcel\ParcelApp\build\app\outputs\flutter-apk\app-release.apk",
     [string]$ManifestPath = "D:\Projects2\Parcel\ParcelAPI\app_version.json",
-    [string]$PublicOrigin = "https://nav.trimline.co.ke:4013",
+    [string]$PublicOrigin = "https://parcel.trimline.co.ke",
     [string]$BackupRoot = "C:\Parcel_backups",
     [string]$Password = "",
     [switch]$SkipBackup,

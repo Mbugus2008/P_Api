@@ -105,9 +105,14 @@ namespace ParcelAPI.Controllers
         }
 
         /// <summary>Full parcel list from one shared cache (see cache notes above).</summary>
-        private async Task<Parcels.Parcel[]> GetParcelsCachedAsync()
+        private Task<Parcels.Parcel[]> GetParcelsCachedAsync() => GetParcelsCachedAsync(GetClient());
+
+        /// <summary>
+        /// Cache-aware parcel read for an explicit client. Also used by
+        /// DashboardCacheWarmer so the first user never pays the cold read.
+        /// </summary>
+        internal static async Task<Parcels.Parcel[]> GetParcelsCachedAsync(IClient client)
         {
-            var client = GetClient();
             var key = ParcelsKeyPrefix + client.ClientCode;
 
             if (Cache.TryGetValue(key, out ParcelCacheEntry? entry) && entry != null)
@@ -142,9 +147,10 @@ namespace ParcelAPI.Controllers
         }
 
         /// <summary>Locations from one shared cache (changes rarely).</summary>
-        private async Task<Loc.Locations[]> GetLocationsCachedAsync()
+        private Task<Loc.Locations[]> GetLocationsCachedAsync() => GetLocationsCachedAsync(GetClient());
+
+        internal static async Task<Loc.Locations[]> GetLocationsCachedAsync(IClient client)
         {
-            var client = GetClient();
             if (client.NavLocationService == null)
                 return Array.Empty<Loc.Locations>();
 
@@ -172,9 +178,10 @@ namespace ParcelAPI.Controllers
         /// Parcels only carry agent codes (Created_By / Payment_Received_By);
         /// this list maps those codes to names and locations for the Users section.
         /// </summary>
-        private async Task<NavUsers.Parcel_Users[]> GetUsersCachedAsync()
+        private Task<NavUsers.Parcel_Users[]> GetUsersCachedAsync() => GetUsersCachedAsync(GetClient());
+
+        internal static async Task<NavUsers.Parcel_Users[]> GetUsersCachedAsync(IClient client)
         {
-            var client = GetClient();
             if (client.NavUserService == null)
                 return Array.Empty<NavUsers.Parcel_Users>();
 
@@ -199,9 +206,10 @@ namespace ParcelAPI.Controllers
         }
 
         /// <summary>Batch list from one shared cache.</summary>
-        private async Task<P_Batches.ParcelBatches[]> GetBatchesAsync()
+        private Task<P_Batches.ParcelBatches[]> GetBatchesAsync() => GetBatchesAsync(GetClient());
+
+        internal static async Task<P_Batches.ParcelBatches[]> GetBatchesAsync(IClient client)
         {
-            var client = GetClient();
             if (client.NavBatchService == null)
                 return Array.Empty<P_Batches.ParcelBatches>();
 
@@ -253,6 +261,23 @@ namespace ParcelAPI.Controllers
                 catch { /* keep serving the stale copy */ }
                 finally { Refreshing.TryRemove(key, out _); }
             });
+        }
+
+        /// <summary>
+        /// Refreshes every dashboard cache for one client. Called by
+        /// DashboardCacheWarmer so a user opening the dashboard (web or app)
+        /// never waits for the ~50s Business Central read.
+        /// </summary>
+        internal static async Task WarmAsync(IClient client, CancellationToken cancellationToken = default)
+        {
+            if (cancellationToken.IsCancellationRequested) return;
+            await GetParcelsCachedAsync(client);
+            if (cancellationToken.IsCancellationRequested) return;
+            await GetBatchesAsync(client);
+            if (cancellationToken.IsCancellationRequested) return;
+            await GetLocationsCachedAsync(client);
+            if (cancellationToken.IsCancellationRequested) return;
+            await GetUsersCachedAsync(client);
         }
 
         /// <summary>Summary stats</summary>

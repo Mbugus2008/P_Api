@@ -1,1 +1,10 @@
-{ "version": "1.0.51", "versionCode": 77, "buildDate": "2026-10-02", "downloadUrl": "https://nav.trimline.co.ke:4013/ParcelApp/ParcelApp.apk", "apkSize": 59397433, "apkSha256": "d21de35d3650b4855c6f96003e8d4a642bf4bbd51448847ffee453d357e6e4ee", "releaseNotes": "In Transit batch card header cleaned up (parcel numbers are shown on each parcel inside the batch). Receipts/labels print the actual route; edited parcels print current customer details.", "forceUpdate": false }
+{
+  "version": "1.0.54",
+  "versionCode": 80,
+  "buildDate": "2026-11-04",
+  "downloadUrl": "https://parcel.trimline.co.ke/ParcelApp/ParcelApp.apk",
+  "apkSize": 59905913,
+  "apkSha256": "72dc38063316f3fe4575c6e0a7a3639dad629143ebe490b4f3c7607e5574a4a6",
+  "releaseNotes": "App now connects to https://parcel.trimline.co.ke (no port). Supervisor role: company dashboard is the supervisor home screen and is limited to them. More reliable startup on slow connections.",
+  "forceUpdate": false
+}
